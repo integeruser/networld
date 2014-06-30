@@ -17,8 +17,8 @@ public class Ball {
 
     ////////////////////////////////
     public void update(float dt) {
-        position.x = position.x + dt/1000 * velocity.x;
-        position.y = position.y + dt/1000 * velocity.y;
+        position.x = position.x + dt * velocity.x;
+        position.y = position.y + dt * velocity.y;
 
         if (position.x - radius < -1) {
             position.x = radius - 1;
