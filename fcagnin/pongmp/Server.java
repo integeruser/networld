@@ -6,7 +6,9 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 
 public class Server {
     public static void main(String[] args) {
@@ -36,19 +38,49 @@ public class Server {
 
     ////////////////////////////////
     private void run() {
-        long prevTime = System.nanoTime();
-        while (true) {
+        final int tickRate = 66;
+        final float dtSec = 1f / tickRate;
+        final long dtNano = (long) (1000000000f / tickRate);
+
+        System.out.println("Starting simulation - "
+                + "tickRate: " + tickRate + ", "
+                + "dt: " + dtNano + ", ");
+        new Thread((Runnable) () -> {
+            while ( true ) {
+                    String timeStamp = new SimpleDateFormat("HH:mm:ss").format(Calendar.getInstance().getTime());
+                    System.out.println(timeStamp + " dt: " + dtNano);
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+
+        boolean running = true;
+        long timeLastUpdate = 0;
+        long prevTime = 0, timePassed = 0;
+
+        while (running) {
             long time = System.nanoTime();
-            float dt = (time - prevTime) / 1000000;
+            timePassed += time - prevTime;
             prevTime = time;
 
-            update(dt);
-            updateClients();
+            if (time > timeLastUpdate + dtNano) {
+                update(dtSec);
+                updateClients();
 
-//            String timeStamp = new SimpleDateFormat("HH:mm:ss").format(Calendar.getInstance().getTime());
-//            System.out.println(timeStamp + " dt: " + dt);
+                timeLastUpdate = time;
+            }
+
+            if (timePassed > 1000) {
+                // print statistics
+
+                timePassed = 0;
+            }
+
             try {
-                Thread.sleep(10);
+                Thread.sleep(1);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
