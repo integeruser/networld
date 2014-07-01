@@ -54,13 +54,14 @@ public class Server {
             snapshots = 0;
 
             service.scheduleAtFixedRate(() -> {
-                float[] position = new float[2];
-                position[0] = ball.position.x;
-                position[1] = ball.position.y;
+                Snapshot snapshot = new Snapshot();
+                snapshot.serverTime = System.nanoTime();
+                snapshot.ballx = ball.position.x;
+                snapshot.bally = ball.position.y;
 
                 for (ObjectOutputStream out : clients) {
                     try {
-                        out.writeObject(position);
+                        out.writeObject(snapshot);
                         out.flush();
                     } catch (IOException e) {
                         e.printStackTrace();
