@@ -56,8 +56,7 @@ public class Server {
             service.scheduleAtFixedRate(() -> {
                 Snapshot snapshot = new Snapshot();
                 snapshot.serverTime = System.nanoTime();
-                snapshot.ballx = ball.position.x;
-                snapshot.bally = ball.position.y;
+                snapshot.ball = new Ball(ball);
 
                 for (ObjectOutputStream out : clients) {
                     try {

@@ -29,11 +29,12 @@ public class Client {
                     Socket socket = new Socket("localhost", port);
                     ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
 
-                    Snapshot lastSnapshot = null;
+                    Snapshot lastSnapshot = new Snapshot();
+                    lastSnapshot.serverTime = 0;
                     while (true) {
                         Snapshot snapshot = (Snapshot) in.readObject();
                         // reject late packets
-                        if (lastSnapshot == null || lastSnapshot.serverTime < snapshot.serverTime) {
+                        if (lastSnapshot.serverTime < snapshot.serverTime) {
                             snapshot.clientTime = System.nanoTime();
                             snapshots.add(snapshot);
 
@@ -82,8 +83,8 @@ public class Client {
                     long endTime = endSnapshot.clientTime;
                     float timeBetweenSnapshots = endTime - startTime;
 
-                    ball.position.x = startSnapshot.ballx + (1 - ((endTime - renderingTime) / timeBetweenSnapshots)) * (endSnapshot.ballx - startSnapshot.ballx);
-                    ball.position.y = startSnapshot.bally + (1 - ((endTime - renderingTime) / timeBetweenSnapshots)) * (endSnapshot.bally - startSnapshot.bally);
+                    ball.position.x = startSnapshot.ball.position.x + (1 - ((endTime - renderingTime) / timeBetweenSnapshots)) * (endSnapshot.ball.position.x - startSnapshot.ball.position.x);
+                    ball.position.y = startSnapshot.ball.position.y + (1 - ((endTime - renderingTime) / timeBetweenSnapshots)) * (endSnapshot.ball.position.y - startSnapshot.ball.position.y);
                 } else {
                     System.out.println("null");
                 }

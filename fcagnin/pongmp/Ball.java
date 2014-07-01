@@ -7,11 +7,17 @@ import java.io.Serializable;
 
 import static org.lwjgl.opengl.GL11.*;
 
-public class Ball {
+public class Ball implements Serializable {
     public Ball(Vector2f position, Vector2f velocity, float radius) {
         this.position = position;
         this.velocity = velocity;
         this.radius = radius;
+    }
+
+    public Ball(Ball ball) {
+        this.position = new Vector2f(ball.position);
+        this.velocity = new Vector2f(ball.velocity);
+        this.radius = ball.radius;
     }
 
 
