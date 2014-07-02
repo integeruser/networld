@@ -1,4 +1,4 @@
-package pongmp;
+package pongmp.entities;
 
 
 import org.lwjgl.util.vector.Vector2f;
@@ -7,7 +7,7 @@ import java.io.Serializable;
 
 import static org.lwjgl.opengl.GL11.*;
 
-public class Ball implements Serializable {
+public class Ball extends AbstractObject implements Serializable {
     public Ball(Vector2f position, Vector2f velocity, float radius) {
         this.position = position;
         this.velocity = velocity;
@@ -22,6 +22,7 @@ public class Ball implements Serializable {
 
 
     ////////////////////////////////
+    @Override
     public void update(float dt) {
         position.x = position.x + dt * velocity.x;
         position.y = position.y + dt * velocity.y;
@@ -44,6 +45,16 @@ public class Ball implements Serializable {
         }
     }
 
+    @Override
+    public void interp(AbstractObject start, AbstractObject end, float ratio) {
+        Ball startBall = (Ball) start;
+        Ball endBall = (Ball) end;
+
+        position.x = startBall.position.x + (1 - ratio) * (endBall.position.x - startBall.position.x);
+        position.y = startBall.position.y + (1 - ratio) * (endBall.position.y - startBall.position.y);
+    }
+
+    @Override
     public void render() {
         glBegin(GL_LINE_LOOP);
 

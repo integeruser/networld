@@ -1,6 +1,7 @@
 package pongmp;
 
 import org.lwjgl.util.vector.Vector2f;
+import pongmp.entities.Ball;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
@@ -38,7 +39,7 @@ public class Server {
         }
 
         // physics updates: steps of 15 ms
-        final Ball ball = new Ball(new Vector2f(1f - 0.1f, 0f), new Vector2f(-1f, 1f), 0.1f);
+        final Ball ball = new Ball(new Vector2f(1f - 0.1f, 0f), new Vector2f(-1f, 1f), 0.05f);
         {
             updates = 0;
 

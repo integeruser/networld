@@ -4,6 +4,7 @@ import org.lwjgl.LWJGLException;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.util.vector.Vector2f;
+import pongmp.entities.Ball;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -17,7 +18,7 @@ import static org.lwjgl.opengl.GL11.*;
 public class Client {
     public static void main(String[] args) throws LWJGLException, InterruptedException {
         final ConcurrentLinkedQueue<Snapshot> snapshots = new ConcurrentLinkedQueue<>();
-        final Ball ball = new Ball(new Vector2f(1f - 0.1f, 0f), new Vector2f(-1f, 1f), 0.1f);
+        final Ball ball = new Ball(new Vector2f(1f - 0.1f, 0f), new Vector2f(-1f, 1f), 0.05f);
 
         ScheduledExecutorService service = Executors.newScheduledThreadPool(1);
 
@@ -83,8 +84,8 @@ public class Client {
                     long endTime = endSnapshot.clientTime;
                     float timeBetweenSnapshots = endTime - startTime;
 
-                    ball.position.x = startSnapshot.ball.position.x + (1 - ((endTime - renderingTime) / timeBetweenSnapshots)) * (endSnapshot.ball.position.x - startSnapshot.ball.position.x);
-                    ball.position.y = startSnapshot.ball.position.y + (1 - ((endTime - renderingTime) / timeBetweenSnapshots)) * (endSnapshot.ball.position.y - startSnapshot.ball.position.y);
+                    float ratio = (endTime - renderingTime) / timeBetweenSnapshots;
+                    ball.interp(startSnapshot.ball, endSnapshot.ball, ratio);
                 } else {
                     System.out.println("null");
                 }
