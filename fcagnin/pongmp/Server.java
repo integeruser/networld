@@ -58,15 +58,12 @@ public class Server {
                 snapshot.serverTime = System.nanoTime();
                 snapshot.ball = new Ball(ball);
 
-                ArrayList<ObjectOutputStream> clientsToRemove = null;
+                ArrayList<ObjectOutputStream> clientsToRemove = new ArrayList<>();
                 for (ObjectOutputStream out : clients) {
                     try {
                         out.writeObject(snapshot);
                         out.flush();
                     } catch (IOException e) {
-                        if (clientsToRemove == null) {
-                            clientsToRemove = new ArrayList<>();
-                        }
                         clientsToRemove.add(out);
                     }
                 }
