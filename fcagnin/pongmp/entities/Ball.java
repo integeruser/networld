@@ -15,9 +15,9 @@ public class Ball extends AbstractObject implements Serializable {
     }
 
     public Ball(Ball ball) {
-        this.position = new Vector2f(ball.position);
-        this.velocity = new Vector2f(ball.velocity);
-        this.radius = ball.radius;
+        position = new Vector2f(ball.position);
+        velocity = new Vector2f(ball.velocity);
+        radius = ball.radius;
     }
 
 
