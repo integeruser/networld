@@ -58,14 +58,21 @@ public class Server {
                 snapshot.serverTime = System.nanoTime();
                 snapshot.ball = new Ball(ball);
 
+                ArrayList<ObjectOutputStream> clientsToRemove = null;
                 for (ObjectOutputStream out : clients) {
                     try {
                         out.writeObject(snapshot);
                         out.flush();
                     } catch (IOException e) {
-                        e.printStackTrace();
-                        System.exit(-1);
+                        if (clientsToRemove == null) {
+                            clientsToRemove = new ArrayList<>();
+                        }
+                        clientsToRemove.add(out);
                     }
+                }
+                for (ObjectOutputStream out : clientsToRemove) {
+                    clients.remove(out);
+                    System.out.println("Client removed from queue");
                 }
 
                 snapshots++;
