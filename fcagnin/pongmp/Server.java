@@ -57,7 +57,7 @@ public class Server {
             service.scheduleAtFixedRate(() -> {
                 Snapshot snapshot = new Snapshot();
                 snapshot.serverTime = System.nanoTime();
-                snapshot.ball = new Ball(ball);
+                snapshot.ball = Ball.serialize(ball);
 
                 ArrayList<ObjectOutputStream> clientsToRemove = new ArrayList<>();
                 for (ObjectOutputStream out : clients) {

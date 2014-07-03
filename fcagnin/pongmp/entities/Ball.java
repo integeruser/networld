@@ -3,11 +3,17 @@ package pongmp.entities;
 
 import org.lwjgl.util.vector.Vector2f;
 
-import java.io.Serializable;
+import java.nio.ByteBuffer;
 
 import static org.lwjgl.opengl.GL11.*;
 
-public class Ball extends AbstractObject implements Serializable {
+public class Ball extends AbstractObject {
+    public Ball() {
+        position = new Vector2f();
+        velocity = new Vector2f();
+        radius = 0;
+    }
+
     public Ball(Vector2f position, Vector2f velocity, float radius) {
         this.position = position;
         this.velocity = velocity;
@@ -46,7 +52,7 @@ public class Ball extends AbstractObject implements Serializable {
     }
 
     @Override
-    public void interp(AbstractObject start, AbstractObject end, float ratio) {
+    public void interpolate(AbstractObject start, AbstractObject end, float ratio) {
         Ball startBall = (Ball) start;
         Ball endBall = (Ball) end;
 
@@ -71,4 +77,34 @@ public class Ball extends AbstractObject implements Serializable {
     public Vector2f position;
     public Vector2f velocity;
     public float radius;
+
+
+    ////////////////////////////////
+    public static byte[] serialize(Ball ball) {
+        ByteBuffer byteBuffer = ByteBuffer.allocate(Long.BYTES + 2 * Float.BYTES + 2 * Float.BYTES + Float.BYTES);
+
+        int id = 0;
+        byteBuffer.putLong(id);
+
+        byteBuffer.putFloat(ball.position.x);
+        byteBuffer.putFloat(ball.position.y);
+
+        byteBuffer.putFloat(ball.velocity.x);
+        byteBuffer.putFloat(ball.velocity.y);
+
+        byteBuffer.putFloat(ball.radius);
+
+        return byteBuffer.array();
+    }
+
+    public static Ball deserialize(byte[] bytes) {
+        ByteBuffer byteBuffer = ByteBuffer.wrap(bytes)/*.order(ByteOrder.LITTLE_ENDIAN)*/;
+
+        long id = byteBuffer.getLong();
+        Vector2f position = new Vector2f(byteBuffer.getFloat(), byteBuffer.getFloat());
+        Vector2f velocity = new Vector2f(byteBuffer.getFloat(), byteBuffer.getFloat());
+        float radius = byteBuffer.getFloat();
+
+        return new Ball(position, velocity, radius);
+    }
 }

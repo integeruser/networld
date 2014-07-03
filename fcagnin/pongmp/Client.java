@@ -85,7 +85,7 @@ public class Client {
                     float timeBetweenSnapshots = endTime - startTime;
 
                     float ratio = (endTime - renderingTime) / timeBetweenSnapshots;
-                    ball.interp(startSnapshot.ball, endSnapshot.ball, ratio);
+                    ball.interpolate(Ball.deserialize(startSnapshot.ball), Ball.deserialize(endSnapshot.ball), ratio);
                 } else {
                     System.out.println("null");
                 }
