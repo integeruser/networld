@@ -83,8 +83,7 @@ public class Ball extends AbstractObject {
     public static byte[] serialize(Ball ball) {
         ByteBuffer byteBuffer = ByteBuffer.allocate( Long.BYTES + 2 * Float.BYTES + 2 * Float.BYTES + Float.BYTES );
 
-        int id = 0;
-        byteBuffer.putLong( id );
+        byteBuffer.putLong( ball.id );
 
         byteBuffer.putFloat( ball.position.x );
         byteBuffer.putFloat( ball.position.y );
@@ -105,6 +104,8 @@ public class Ball extends AbstractObject {
         Vector2f velocity = new Vector2f( byteBuffer.getFloat(), byteBuffer.getFloat() );
         float radius = byteBuffer.getFloat();
 
-        return new Ball( position, velocity, radius );
+        Ball ball = new Ball( position, velocity, radius );
+        ball.id = id;
+        return ball;
     }
 }
