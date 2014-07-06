@@ -1,11 +1,11 @@
 package pongmp.entities;
 
-
 import org.lwjgl.util.vector.Vector2f;
 
 import java.nio.ByteBuffer;
 
 import static org.lwjgl.opengl.GL11.*;
+
 
 public class Ball extends AbstractObject {
     public Ball() {
@@ -21,8 +21,8 @@ public class Ball extends AbstractObject {
     }
 
     public Ball(Ball ball) {
-        position = new Vector2f(ball.position);
-        velocity = new Vector2f(ball.velocity);
+        position = new Vector2f( ball.position );
+        velocity = new Vector2f( ball.velocity );
         radius = ball.radius;
     }
 
@@ -33,19 +33,19 @@ public class Ball extends AbstractObject {
         position.x = position.x + dt * velocity.x;
         position.y = position.y + dt * velocity.y;
 
-        if (position.x - radius < -1) {
+        if ( position.x - radius < -1 ) {
             position.x = radius - 1;
             velocity.x = -velocity.x;
         }
-        if (position.x + radius > 1) {
+        if ( position.x + radius > 1 ) {
             position.x = 1 - radius;
             velocity.x = -velocity.x;
         }
-        if (position.y - radius < -1) {
+        if ( position.y - radius < -1 ) {
             position.y = radius - 1;
             velocity.y = -velocity.y;
         }
-        if (position.y + radius > 1) {
+        if ( position.y + radius > 1 ) {
             position.y = 1 - radius;
             velocity.y = -velocity.y;
         }
@@ -62,11 +62,11 @@ public class Ball extends AbstractObject {
 
     @Override
     public void render() {
-        glBegin(GL_LINE_LOOP);
+        glBegin( GL_LINE_LOOP );
 
-        for (int i = 0; i <= 300; i++) {
+        for ( int i = 0; i <= 300; i++ ) {
             double angle = 2 * Math.PI * i / 300;
-            glVertex2d(position.x + radius * Math.cos(angle), position.y + radius * Math.sin(angle));
+            glVertex2d( position.x + radius * Math.cos( angle ), position.y + radius * Math.sin( angle ) );
         }
 
         glEnd();
@@ -81,30 +81,30 @@ public class Ball extends AbstractObject {
 
     ////////////////////////////////
     public static byte[] serialize(Ball ball) {
-        ByteBuffer byteBuffer = ByteBuffer.allocate(Long.BYTES + 2 * Float.BYTES + 2 * Float.BYTES + Float.BYTES);
+        ByteBuffer byteBuffer = ByteBuffer.allocate( Long.BYTES + 2 * Float.BYTES + 2 * Float.BYTES + Float.BYTES );
 
         int id = 0;
-        byteBuffer.putLong(id);
+        byteBuffer.putLong( id );
 
-        byteBuffer.putFloat(ball.position.x);
-        byteBuffer.putFloat(ball.position.y);
+        byteBuffer.putFloat( ball.position.x );
+        byteBuffer.putFloat( ball.position.y );
 
-        byteBuffer.putFloat(ball.velocity.x);
-        byteBuffer.putFloat(ball.velocity.y);
+        byteBuffer.putFloat( ball.velocity.x );
+        byteBuffer.putFloat( ball.velocity.y );
 
-        byteBuffer.putFloat(ball.radius);
+        byteBuffer.putFloat( ball.radius );
 
         return byteBuffer.array();
     }
 
     public static Ball deserialize(byte[] bytes) {
-        ByteBuffer byteBuffer = ByteBuffer.wrap(bytes)/*.order(ByteOrder.LITTLE_ENDIAN)*/;
+        ByteBuffer byteBuffer = ByteBuffer.wrap( bytes )/*.order(ByteOrder.LITTLE_ENDIAN)*/;
 
         long id = byteBuffer.getLong();
-        Vector2f position = new Vector2f(byteBuffer.getFloat(), byteBuffer.getFloat());
-        Vector2f velocity = new Vector2f(byteBuffer.getFloat(), byteBuffer.getFloat());
+        Vector2f position = new Vector2f( byteBuffer.getFloat(), byteBuffer.getFloat() );
+        Vector2f velocity = new Vector2f( byteBuffer.getFloat(), byteBuffer.getFloat() );
         float radius = byteBuffer.getFloat();
 
-        return new Ball(position, velocity, radius);
+        return new Ball( position, velocity, radius );
     }
 }
