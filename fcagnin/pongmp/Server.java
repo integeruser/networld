@@ -95,6 +95,8 @@ public class Server {
                     for ( ObjectOutputStream out : clientsToRemove ) {
                         clients.remove( out );
                         System.out.println( "Client removed from queue" );
+
+                        System.exit( 223 ); // temporary
                     }
                     if ( clients.isEmpty() ) { paused = true; }
 

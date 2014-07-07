@@ -19,6 +19,8 @@ import static org.lwjgl.opengl.GL11.*;
 
 public class Client {
     public static void main(String[] args) throws LWJGLException, InterruptedException {
+        Server.main( null ); // temporary
+
         final ConcurrentLinkedQueue<Snapshot> snapshots = new ConcurrentLinkedQueue<>();
         final HashMap<Long, Ball> balls = new HashMap<>();
 
