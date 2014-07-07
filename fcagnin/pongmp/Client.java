@@ -3,12 +3,13 @@ package pongmp;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
-import org.lwjgl.util.vector.Vector2f;
 import pongmp.entities.Ball;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.util.HashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -19,7 +20,7 @@ import static org.lwjgl.opengl.GL11.*;
 public class Client {
     public static void main(String[] args) throws LWJGLException, InterruptedException {
         final ConcurrentLinkedQueue<Snapshot> snapshots = new ConcurrentLinkedQueue<>();
-        final Ball ball = new Ball( new Vector2f( 1f - 0.1f, 0f ), new Vector2f( -1f, 1f ), 0.05f );
+        final HashMap<Long, Ball> balls = new HashMap<>();
 
         ScheduledExecutorService service = Executors.newScheduledThreadPool( 1 );
 
@@ -70,30 +71,45 @@ public class Client {
                 final long interpTime = 100000000;
                 long renderingTime = System.nanoTime() - interpTime;
 
+
+                HashMap<Long, Ball> prevBalls, nextBalls;
+                prevBalls = deserialize( startSnapshot.balls );
+                for ( long i : prevBalls.keySet() ) {
+                    if ( !balls.containsKey( i ) ) {
+                        balls.put( i, new Ball( prevBalls.get( i ) ) );
+                    }
+                }
+
                 if ( endSnapshot == null ) { endSnapshot = snapshots.poll(); }
                 while ( endSnapshot != null && endSnapshot.clientTime < renderingTime ) {
                     startSnapshot = endSnapshot;
+                    prevBalls = deserialize( startSnapshot.balls );
                     endSnapshot = snapshots.poll();
                 }
 
                 if ( endSnapshot != null ) {
+                    nextBalls = deserialize( endSnapshot.balls );
+
                     // update position: interpolate between snapshots
                     long startTime = startSnapshot.clientTime;
                     long endTime = endSnapshot.clientTime;
                     float timeBetweenSnapshots = endTime - startTime;
 
                     float ratio = (endTime - renderingTime) / timeBetweenSnapshots;
-                    ball.interpolate(
-                            Ball.deserialize( startSnapshot.ball ),
-                            Ball.deserialize( endSnapshot.ball ),
-                            ratio );
-                } else {
-                    System.out.println( "null" );
-                }
+
+                    for ( long i : balls.keySet() ) {
+                        balls.get( i ).interpolate(
+                                prevBalls.get( i ),
+                                nextBalls.get( i ),
+                                ratio );
+                    }
+                } else { System.out.println( "endSnapshot null" ); }
 
                 // render
                 glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-                ball.render();
+                for ( Ball ball : balls.values() ) {
+                    ball.render();
+                }
 
                 Display.update();
             }
@@ -101,5 +117,20 @@ public class Client {
             Display.destroy();
             System.exit( -1 );
         }
+    }
+
+    private static HashMap<Long, Ball> deserialize(byte[] bytes) {
+        HashMap<Long, Ball> map = new HashMap<>();
+
+        ByteBuffer byteBuffer = ByteBuffer.wrap( bytes );
+        while ( byteBuffer.hasRemaining() ) {
+            byte ballCode = byteBuffer.get();
+            byte[] dst = new byte[Ball.BYTES];
+            byteBuffer.get( dst );
+            Ball ball = Ball.deserialize( dst );
+            map.put( ball.id, ball );
+        }
+
+        return map;
     }
 }

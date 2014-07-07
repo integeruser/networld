@@ -1,6 +1,7 @@
 package pongmp.entities;
 
 import org.lwjgl.util.vector.Vector2f;
+import pongmp.Utils;
 
 import java.nio.ByteBuffer;
 
@@ -21,6 +22,7 @@ public class Ball extends AbstractObject {
     }
 
     public Ball(Ball ball) {
+        id = ball.id;
         position = new Vector2f( ball.position );
         velocity = new Vector2f( ball.velocity );
         radius = ball.radius;
@@ -80,8 +82,10 @@ public class Ball extends AbstractObject {
 
 
     ////////////////////////////////
+    public static final int BYTES = Long.BYTES + 2 * Float.BYTES + 2 * Float.BYTES + Float.BYTES;
+
     public static byte[] serialize(Ball ball) {
-        ByteBuffer byteBuffer = ByteBuffer.allocate( Long.BYTES + 2 * Float.BYTES + 2 * Float.BYTES + Float.BYTES );
+        ByteBuffer byteBuffer = ByteBuffer.allocate( BYTES );
 
         byteBuffer.putLong( ball.id );
 
@@ -107,5 +111,15 @@ public class Ball extends AbstractObject {
         Ball ball = new Ball( position, velocity, radius );
         ball.id = id;
         return ball;
+    }
+
+
+    public static Ball createRandom() {
+        float radius = Utils.randomFloat( 0.05f, 0.1f );
+        Vector2f position = new Vector2f(
+                Utils.randomFloat( -1 + radius, 1 - radius ),
+                Utils.randomFloat( -1 + radius, 1 - radius ) );
+        Vector2f velocity = new Vector2f( Utils.randomFloat( -0.3f, 0.3f ), Utils.randomFloat( -0.3f, 0.3f ) );
+        return new Ball( position, velocity, radius );
     }
 }

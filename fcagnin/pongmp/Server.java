@@ -1,6 +1,5 @@
 package pongmp;
 
-import org.lwjgl.util.vector.Vector2f;
 import pongmp.entities.Ball;
 
 import java.io.IOException;
@@ -10,6 +9,7 @@ import java.net.Socket;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -41,13 +41,19 @@ public class Server {
         }
 
         // physics updates: steps of 15 ms
-        final Ball ball = new Ball( new Vector2f( 1f - 0.1f, 0f ), new Vector2f( -1f, 1f ), 0.05f );
+        final HashMap<Long, Ball> balls = new HashMap<>();
+
+        for ( int i = 0; i < 10; i++ ) {
+            Ball ball = Ball.createRandom();
+            balls.put( ball.id, ball );
+        }
+
         {
             updates = 0;
 
             service.scheduleAtFixedRate( () -> {
                 if ( !paused ) {
-                    ball.update( 0.015f );
+                    for ( Ball ball : balls.values() ) { ball.update( 0.015f ); }
                     ticks++;
                     updates++;
                 }
@@ -62,7 +68,20 @@ public class Server {
                 if ( !paused ) {
                     Snapshot snapshot = new Snapshot();
                     snapshot.serverTime = System.nanoTime();
-                    snapshot.ball = Ball.serialize( ball );
+
+                    // serialization
+                    byte ballCode = 127;
+
+                    int ballsSize = balls.size() * (Byte.BYTES + Ball.BYTES);
+                    snapshot.balls = new byte[ballsSize];
+
+                    int ballsIndex = 0;
+                    for ( Ball ball : balls.values() ) {
+                        snapshot.balls[ballsIndex] = ballCode;
+                        ballsIndex += Byte.BYTES;
+                        System.arraycopy( Ball.serialize( ball ), 0, snapshot.balls, ballsIndex, Ball.BYTES );
+                        ballsIndex += Ball.BYTES;
+                    }
 
                     ArrayList<ObjectOutputStream> clientsToRemove = new ArrayList<>();
                     for ( ObjectOutputStream out : clients ) {
