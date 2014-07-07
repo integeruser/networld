@@ -115,11 +115,13 @@ public class Ball extends AbstractObject {
 
 
     public static Ball createRandom() {
-        float radius = Utils.randomFloat( 0.05f, 0.1f );
+        float radius = Utils.randomFloat( 0.05f, 0.15f );
         Vector2f position = new Vector2f(
                 Utils.randomFloat( -1 + radius, 1 - radius ),
                 Utils.randomFloat( -1 + radius, 1 - radius ) );
-        Vector2f velocity = new Vector2f( Utils.randomFloat( -0.3f, 0.3f ), Utils.randomFloat( -0.3f, 0.3f ) );
+        Vector2f velocity = new Vector2f(
+                (Math.random() < 0.5 ? -1 : 1) * Utils.randomFloat( 0.1f, 1f ),
+                (Math.random() < 0.5 ? -1 : 1) * Utils.randomFloat( 0.1f, 1f ) );
         return new Ball( position, velocity, radius );
     }
 }
