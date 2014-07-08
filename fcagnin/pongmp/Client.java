@@ -8,7 +8,6 @@ import pongmp.entities.Ball;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.Socket;
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
@@ -34,16 +33,15 @@ public class Client {
                     Socket socket = new Socket( "localhost", port );
                     ObjectInputStream in = new ObjectInputStream( socket.getInputStream() );
 
-                    Packet lastSnapshot = new Packet();
-                    lastSnapshot.serverTime = 0;
+                    Packet lastPacket = new Packet();
                     while ( true ) {
-                        Packet snapshot = (Packet) in.readObject();
-                        // reject late packets
-                        if ( lastSnapshot.serverTime < snapshot.serverTime ) {
-                            snapshot.clientTime = System.nanoTime();
-                            snapshots.add( snapshot );
+                        byte[] bytes = (byte[]) in.readObject();
+                        Packet packet = Packet.deserialize( bytes );
 
-                            lastSnapshot = snapshot;
+                        // reject late packets
+                        if ( lastPacket.serverTime < packet.serverTime ) {
+                            snapshots.add( packet );
+                            lastPacket = packet;
                         }
                     }
                 } catch ( IOException e ) {
@@ -66,52 +64,41 @@ public class Client {
 
             glViewport( 0, 0, Display.getWidth(), Display.getHeight() );
 
-            Packet startSnapshot = new Packet(), endSnapshot = null;
+            Packet startPacket = new Packet(), endPacket = null;
             while ( !Display.isCloseRequested() ) {
                 if ( Display.wasResized() ) { glViewport( 0, 0, Display.getWidth(), Display.getHeight() ); }
 
                 final long interpTime = 100000000;
                 long renderingTime = System.nanoTime() - interpTime;
 
-
-                HashMap<Long, Ball> prevBalls, nextBalls;
-                prevBalls = deserialize( startSnapshot.balls );
-                for ( long i : prevBalls.keySet() ) {
+                for ( long i : startPacket.balls.keySet() ) {
                     if ( !balls.containsKey( i ) ) {
-                        balls.put( i, new Ball( prevBalls.get( i ) ) );
+                        balls.put( i, new Ball( startPacket.balls.get( i ) ) );
                     }
                 }
 
-                if ( endSnapshot == null ) { endSnapshot = snapshots.poll(); }
-                while ( endSnapshot != null && endSnapshot.clientTime < renderingTime ) {
-                    startSnapshot = endSnapshot;
-                    prevBalls = deserialize( startSnapshot.balls );
-                    endSnapshot = snapshots.poll();
+                if ( endPacket == null ) { endPacket = snapshots.poll(); }
+                while ( endPacket != null && endPacket.clientTime < renderingTime ) {
+                    startPacket = endPacket;
+                    endPacket = snapshots.poll();
                 }
 
-                if ( endSnapshot != null ) {
-                    nextBalls = deserialize( endSnapshot.balls );
-
+                if ( endPacket != null ) {
                     // update position: interpolate between snapshots
-                    long startTime = startSnapshot.clientTime;
-                    long endTime = endSnapshot.clientTime;
+                    long startTime = startPacket.clientTime;
+                    long endTime = endPacket.clientTime;
                     float timeBetweenSnapshots = endTime - startTime;
 
                     float ratio = (endTime - renderingTime) / timeBetweenSnapshots;
 
                     for ( long i : balls.keySet() ) {
-                        balls.get( i ).interpolate(
-                                prevBalls.get( i ),
-                                nextBalls.get( i ),
-                                ratio );
+                        balls.get( i ).interpolate( startPacket.balls.get( i ), endPacket.balls.get( i ), ratio );
                     }
-                } else { System.out.println( "endSnapshot null" ); }
+                } else { System.out.println( "endPacket null" ); }
 
                 // render
                 glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-                for ( Ball ball : balls.values() ) {
-                    ball.render();
-                }
+                for ( Ball ball : balls.values() ) { ball.render(); }
 
                 Display.update();
             }
@@ -119,20 +106,5 @@ public class Client {
             Display.destroy();
             System.exit( -1 );
         }
-    }
-
-    private static HashMap<Long, Ball> deserialize(byte[] bytes) {
-        HashMap<Long, Ball> map = new HashMap<>();
-
-        ByteBuffer byteBuffer = ByteBuffer.wrap( bytes );
-        while ( byteBuffer.hasRemaining() ) {
-            byte ballCode = byteBuffer.get();
-            byte[] dst = new byte[Ball.BYTES];
-            byteBuffer.get( dst );
-            Ball ball = Ball.deserialize( dst );
-            map.put( ball.id, ball );
-        }
-
-        return map;
     }
 }

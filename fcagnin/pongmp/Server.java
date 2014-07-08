@@ -42,7 +42,6 @@ public class Server {
 
         // physics updates: steps of 15 ms
         final HashMap<Long, Ball> balls = new HashMap<>();
-
         for ( int i = 0; i < 100; i++ ) {
             Ball ball = Ball.createRandom();
             balls.put( ball.id, ball );
@@ -54,6 +53,7 @@ public class Server {
             service.scheduleAtFixedRate( () -> {
                 if ( !paused ) {
                     for ( Ball ball : balls.values() ) { ball.update( 0.015f ); }
+
                     ticks++;
                     updates++;
                 }
@@ -66,27 +66,15 @@ public class Server {
 
             service.scheduleAtFixedRate( () -> {
                 if ( !paused ) {
-                    Packet snapshot = new Packet();
-                    snapshot.serverTime = System.nanoTime();
+                    Packet packet = new Packet();
+                    packet.balls = balls;
 
-                    // serialization
-                    byte ballCode = 127;
-
-                    int ballsSize = balls.size() * (Byte.BYTES + Ball.BYTES);
-                    snapshot.balls = new byte[ballsSize];
-
-                    int ballsIndex = 0;
-                    for ( Ball ball : balls.values() ) {
-                        snapshot.balls[ballsIndex] = ballCode;
-                        ballsIndex += Byte.BYTES;
-                        System.arraycopy( Ball.serialize( ball ), 0, snapshot.balls, ballsIndex, Ball.BYTES );
-                        ballsIndex += Ball.BYTES;
-                    }
+                    byte[] bytes = Packet.serialize( packet );
 
                     ArrayList<ObjectOutputStream> clientsToRemove = new ArrayList<>();
                     for ( ObjectOutputStream out : clients ) {
                         try {
-                            out.writeObject( snapshot );
+                            out.writeObject( bytes );
                             out.flush();
                         } catch ( IOException e ) {
                             clientsToRemove.add( out );
@@ -121,5 +109,5 @@ public class Server {
     ////////////////////////////////
     private static long ticks;
     private static int updates, snapshots;
-    private static boolean paused;
+    private static boolean paused = true;
 }
