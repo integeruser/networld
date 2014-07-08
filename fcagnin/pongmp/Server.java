@@ -43,7 +43,7 @@ public class Server {
         // physics updates: steps of 15 ms
         final HashMap<Long, Ball> balls = new HashMap<>();
 
-        for ( int i = 0; i < 10; i++ ) {
+        for ( int i = 0; i < 100; i++ ) {
             Ball ball = Ball.createRandom();
             balls.put( ball.id, ball );
         }
@@ -66,7 +66,7 @@ public class Server {
 
             service.scheduleAtFixedRate( () -> {
                 if ( !paused ) {
-                    Snapshot snapshot = new Snapshot();
+                    Packet snapshot = new Packet();
                     snapshot.serverTime = System.nanoTime();
 
                     // serialization

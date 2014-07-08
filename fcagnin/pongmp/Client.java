@@ -21,7 +21,7 @@ public class Client {
     public static void main(String[] args) throws LWJGLException, InterruptedException {
         Server.main( null ); // temporary
 
-        final ConcurrentLinkedQueue<Snapshot> snapshots = new ConcurrentLinkedQueue<>();
+        final ConcurrentLinkedQueue<Packet> snapshots = new ConcurrentLinkedQueue<>();
         final HashMap<Long, Ball> balls = new HashMap<>();
 
         ScheduledExecutorService service = Executors.newScheduledThreadPool( 1 );
@@ -34,10 +34,10 @@ public class Client {
                     Socket socket = new Socket( "localhost", port );
                     ObjectInputStream in = new ObjectInputStream( socket.getInputStream() );
 
-                    Snapshot lastSnapshot = new Snapshot();
+                    Packet lastSnapshot = new Packet();
                     lastSnapshot.serverTime = 0;
                     while ( true ) {
-                        Snapshot snapshot = (Snapshot) in.readObject();
+                        Packet snapshot = (Packet) in.readObject();
                         // reject late packets
                         if ( lastSnapshot.serverTime < snapshot.serverTime ) {
                             snapshot.clientTime = System.nanoTime();
@@ -66,7 +66,7 @@ public class Client {
 
             glViewport( 0, 0, Display.getWidth(), Display.getHeight() );
 
-            Snapshot startSnapshot = new Snapshot(), endSnapshot = null;
+            Packet startSnapshot = new Packet(), endSnapshot = null;
             while ( !Display.isCloseRequested() ) {
                 if ( Display.wasResized() ) { glViewport( 0, 0, Display.getWidth(), Display.getHeight() ); }
 

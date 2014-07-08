@@ -3,8 +3,8 @@ package pongmp;
 import java.io.Serializable;
 
 
-public class Snapshot implements Serializable {
-    public Snapshot() {
+public class Packet implements Serializable {
+    public Packet() {
         balls = new byte[0];
     }
 
