@@ -1,6 +1,7 @@
 package pongmp.entities;
 
 import org.lwjgl.util.vector.Vector2f;
+import org.lwjgl.util.vector.Vector3f;
 import pongmp.Utils;
 
 import java.nio.ByteBuffer;
@@ -13,19 +14,23 @@ public class Ball extends AbstractObject {
         position = new Vector2f();
         velocity = new Vector2f();
         radius = 0;
+        color = new Vector3f( 255f, 255f, 255f );
     }
 
-    public Ball(Vector2f position, Vector2f velocity, float radius) {
+    public Ball(Vector2f position, Vector2f velocity, float radius, Vector3f color) {
         this.position = position;
         this.velocity = velocity;
         this.radius = radius;
+        this.color = color;
     }
 
     public Ball(Ball ball) {
         id = ball.id;
+
         position = new Vector2f( ball.position );
         velocity = new Vector2f( ball.velocity );
         radius = ball.radius;
+        color = new Vector3f( ball.color );
     }
 
 
@@ -65,6 +70,7 @@ public class Ball extends AbstractObject {
     @Override
     public void render() {
         glBegin( GL_LINE_LOOP );
+        glColor3f( color.x, color.y, color.z );
 
         for ( int i = 0; i <= 300; i++ ) {
             double angle = 2 * Math.PI * i / 300;
@@ -79,10 +85,11 @@ public class Ball extends AbstractObject {
     public Vector2f position;
     public Vector2f velocity;
     public float radius;
+    public Vector3f color;
 
 
     ////////////////////////////////
-    public static final int BYTES = Long.BYTES + 2 * Float.BYTES + 2 * Float.BYTES + Float.BYTES;
+    public static final int BYTES = Long.BYTES + 2 * Float.BYTES + 2 * Float.BYTES + Float.BYTES + 3 * Float.BYTES;
 
     public static byte[] serialize(Ball ball) {
         ByteBuffer byteBuffer = ByteBuffer.allocate( BYTES );
@@ -97,18 +104,23 @@ public class Ball extends AbstractObject {
 
         byteBuffer.putFloat( ball.radius );
 
+        byteBuffer.putFloat( ball.color.x );
+        byteBuffer.putFloat( ball.color.y );
+        byteBuffer.putFloat( ball.color.z );
+
         return byteBuffer.array();
     }
 
     public static Ball deserialize(byte[] bytes) {
-        ByteBuffer byteBuffer = ByteBuffer.wrap( bytes )/*.order(ByteOrder.LITTLE_ENDIAN)*/;
+        ByteBuffer byteBuffer = ByteBuffer.wrap( bytes );
 
         long id = byteBuffer.getLong();
         Vector2f position = new Vector2f( byteBuffer.getFloat(), byteBuffer.getFloat() );
         Vector2f velocity = new Vector2f( byteBuffer.getFloat(), byteBuffer.getFloat() );
         float radius = byteBuffer.getFloat();
+        Vector3f color = new Vector3f( byteBuffer.getFloat(), byteBuffer.getFloat(), byteBuffer.getFloat() );
 
-        Ball ball = new Ball( position, velocity, radius );
+        Ball ball = new Ball( position, velocity, radius, color );
         ball.id = id;
         return ball;
     }
@@ -122,6 +134,10 @@ public class Ball extends AbstractObject {
         Vector2f velocity = new Vector2f(
                 (Math.random() < 0.5 ? -1 : 1) * Utils.randomFloat( 0.1f, 1f ),
                 (Math.random() < 0.5 ? -1 : 1) * Utils.randomFloat( 0.1f, 1f ) );
-        return new Ball( position, velocity, radius );
+        Vector3f color = new Vector3f(
+                Utils.randomFloat( 0f, 1f ),
+                Utils.randomFloat( 0f, 1f ),
+                Utils.randomFloat( 0f, 1f ) );
+        return new Ball( position, velocity, radius, color );
     }
 }
