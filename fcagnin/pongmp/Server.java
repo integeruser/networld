@@ -70,6 +70,7 @@ public class Server {
                     packet.balls = balls;
 
                     byte[] bytes = Packet.serialize( packet );
+                    packetSizeSum += bytes.length;
 
                     ArrayList<ObjectOutputStream> clientsToRemove = new ArrayList<>();
                     for ( ObjectOutputStream out : clients ) {
@@ -98,9 +99,11 @@ public class Server {
             service.scheduleAtFixedRate( () -> {
                 if ( !paused ) {
                     String timeStamp = new SimpleDateFormat( "HH:mm:ss" ).format( Calendar.getInstance().getTime() );
-                    System.out.println( timeStamp + " updates/s: " + updates + ", snapshots/s: " + snapshots );
+                    System.out.println( timeStamp + " updates/s: " + updates + ", snapshots/s: " + snapshots + ", " +
+                            "avg. packet size: " + packetSizeSum / snapshots );
                     updates = 0;
                     snapshots = 0;
+                    packetSizeSum = 0;
                 }
             }, 0, 1, TimeUnit.SECONDS );
         }
@@ -108,6 +111,6 @@ public class Server {
 
     ////////////////////////////////
     private static long ticks;
-    private static int updates, snapshots;
+    private static int updates, snapshots, packetSizeSum;
     private static boolean paused = true;
 }
