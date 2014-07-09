@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.zip.DataFormatException;
 
 import static org.lwjgl.opengl.GL11.*;
 
@@ -36,7 +37,8 @@ public class Client {
                     Packet lastPacket = new Packet();
                     while ( true ) {
                         byte[] bytes = (byte[]) in.readObject();
-                        Packet packet = Packet.deserialize( bytes );
+                        byte[] decompressedBytes = Utils.decompress( bytes );
+                        Packet packet = Packet.deserialize( decompressedBytes );
 
                         // reject late packets
                         if ( lastPacket.serverTime < packet.serverTime ) {
@@ -48,6 +50,9 @@ public class Client {
                     e.printStackTrace();
                     System.exit( -1 );
                 } catch ( ClassNotFoundException e ) {
+                    e.printStackTrace();
+                    System.exit( -1 );
+                } catch ( DataFormatException e ) {
                     e.printStackTrace();
                     System.exit( -1 );
                 }

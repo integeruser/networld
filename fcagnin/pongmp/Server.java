@@ -70,12 +70,21 @@ public class Server {
                     packet.balls = balls;
 
                     byte[] bytes = Packet.serialize( packet );
+                    byte[] compressedBytes = bytes;
+                    try {
+                        compressedBytes = Utils.compress( bytes );
+                    } catch ( IOException e ) {
+                        e.printStackTrace();
+                        System.exit( -1 );
+                    }
+
                     packetSizeSum += bytes.length;
+                    compressedPacketSizeSum += compressedBytes.length;
 
                     ArrayList<ObjectOutputStream> clientsToRemove = new ArrayList<>();
                     for ( ObjectOutputStream out : clients ) {
                         try {
-                            out.writeObject( bytes );
+                            out.writeObject( compressedBytes );
                             out.flush();
                         } catch ( IOException e ) {
                             clientsToRemove.add( out );
@@ -100,10 +109,13 @@ public class Server {
                 if ( !paused ) {
                     String timeStamp = new SimpleDateFormat( "HH:mm:ss" ).format( Calendar.getInstance().getTime() );
                     System.out.println( timeStamp + " updates/s: " + updates + ", snapshots/s: " + snapshots + ", " +
-                            "avg. packet size: " + packetSizeSum / snapshots );
+                            "avg. packet size: " + compressedPacketSizeSum / snapshots + " (uncompressed: " +
+                            packetSizeSum / snapshots + ", ratio: " + (float) compressedPacketSizeSum / packetSizeSum
+                            + ")" );
                     updates = 0;
                     snapshots = 0;
                     packetSizeSum = 0;
+                    compressedPacketSizeSum = 0;
                 }
             }, 0, 1, TimeUnit.SECONDS );
         }
@@ -111,6 +123,6 @@ public class Server {
 
     ////////////////////////////////
     private static long ticks;
-    private static int updates, snapshots, packetSizeSum;
+    private static int updates, snapshots, packetSizeSum, compressedPacketSizeSum;
     private static boolean paused = true;
 }

@@ -2,10 +2,8 @@ package pongmp;
 
 import pongmp.entities.Ball;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
-import java.util.zip.DataFormatException;
 
 
 public class Packet {
@@ -27,27 +25,14 @@ public class Packet {
             byteBuffer.put( Ball.serialize( ball ) );
         }
 
-        try {
-            return Utils.compress( byteBuffer.array() );
-        } catch ( IOException e ) {
-            e.printStackTrace();
-            return null;
-        }
+        return byteBuffer.array();
     }
 
     public static Packet deserialize(byte[] bytes) {
         Packet packet = new Packet();
 
         ByteBuffer byteBuffer = null;
-        try {
-            byteBuffer = ByteBuffer.wrap( Utils.decompress( bytes ) );
-        } catch ( IOException e ) {
-            e.printStackTrace();
-            return null;
-        } catch ( DataFormatException e ) {
-            e.printStackTrace();
-            return null;
-        }
+        byteBuffer = ByteBuffer.wrap( bytes );
 
         packet.serverTime = byteBuffer.getLong();
         packet.clientTime = System.nanoTime();
