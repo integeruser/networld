@@ -8,6 +8,7 @@ import pongmp.entities.Ball;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
@@ -38,7 +39,8 @@ public class Client {
                     while ( true ) {
                         byte[] bytes = (byte[]) in.readObject();
                         byte[] decompressedBytes = Utils.decompress( bytes );
-                        Packet packet = Packet.deserialize( decompressedBytes );
+                        ByteBuffer byteBuffer = ByteBuffer.wrap( decompressedBytes );
+                        Packet packet = Packet.deserialize( byteBuffer );
 
                         // reject late packets
                         if ( lastPacket.serverTime < packet.serverTime ) {

@@ -14,25 +14,23 @@ public class Packet {
     }
 
     ////////////////////////////////
-    public static byte[] serialize(Packet packet) {
-        ByteBuffer byteBuffer = ByteBuffer.allocate( Long.BYTES + packet.balls.size() * (Byte.BYTES + Ball.BYTES) );
+    public int size() {
+        return Long.BYTES + balls.size() * (Byte.BYTES + Ball.BYTES);
+    }
 
+    ////////////////////////////////
+    public static void serialize(Packet packet, ByteBuffer byteBuffer) {
         packet.serverTime = System.nanoTime();
         byteBuffer.putLong( packet.serverTime );
 
         for ( Ball ball : packet.balls.values() ) {
             byteBuffer.put( (byte) 127 );  // ball code
-            byteBuffer.put( Ball.serialize( ball ) );
+            Ball.serialize( ball, byteBuffer );
         }
-
-        return byteBuffer.array();
     }
 
-    public static Packet deserialize(byte[] bytes) {
+    public static Packet deserialize(ByteBuffer byteBuffer) {
         Packet packet = new Packet();
-
-        ByteBuffer byteBuffer = null;
-        byteBuffer = ByteBuffer.wrap( bytes );
 
         packet.serverTime = byteBuffer.getLong();
         packet.clientTime = System.nanoTime();
@@ -40,18 +38,14 @@ public class Packet {
         while ( byteBuffer.hasRemaining() ) {
             byteBuffer.get();  // ball code
 
-            byte[] dst = new byte[Ball.BYTES];
-            byteBuffer.get( dst );
-            Ball ball = Ball.deserialize( dst );
+            Ball ball = Ball.deserialize( byteBuffer );
             packet.balls.put( ball.id, ball );
         }
 
         return packet;
     }
 
-
     ////////////////////////////////
-
     public long serverTime, clientTime;
     public HashMap<Long, Ball> balls;
 }

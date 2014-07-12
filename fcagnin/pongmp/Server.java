@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -69,7 +70,10 @@ public class Server {
                     Packet packet = new Packet();
                     packet.balls = balls;
 
-                    byte[] bytes = Packet.serialize( packet );
+                    ByteBuffer byteBuffer = ByteBuffer.allocate( packet.size() );
+
+                    Packet.serialize( packet, byteBuffer );
+                    byte[] bytes = byteBuffer.array();
                     byte[] compressedBytes = bytes;
                     try {
                         compressedBytes = Utils.compress( bytes );
