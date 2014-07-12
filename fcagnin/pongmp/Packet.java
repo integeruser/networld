@@ -3,19 +3,18 @@ package pongmp;
 import pongmp.entities.Ball;
 
 import java.nio.ByteBuffer;
-import java.util.HashMap;
 
 
 public class Packet {
     public Packet() {
         serverTime = -1;
         clientTime = -1;
-        balls = new HashMap<>();
+        world = new World();
     }
 
     ////////////////////////////////
     public int size() {
-        return Long.BYTES + balls.size() * (Byte.BYTES + Ball.BYTES);
+        return Long.BYTES + world.balls.size() * (Byte.BYTES + Ball.BYTES);
     }
 
     ////////////////////////////////
@@ -23,10 +22,7 @@ public class Packet {
         packet.serverTime = System.nanoTime();
         byteBuffer.putLong( packet.serverTime );
 
-        for ( Ball ball : packet.balls.values() ) {
-            byteBuffer.put( (byte) 127 );  // ball code
-            Ball.serialize( ball, byteBuffer );
-        }
+        World.serialize( packet.world, byteBuffer );
     }
 
     public static Packet deserialize(ByteBuffer byteBuffer) {
@@ -35,17 +31,12 @@ public class Packet {
         packet.serverTime = byteBuffer.getLong();
         packet.clientTime = System.nanoTime();
 
-        while ( byteBuffer.hasRemaining() ) {
-            byteBuffer.get();  // ball code
-
-            Ball ball = Ball.deserialize( byteBuffer );
-            packet.balls.put( ball.id, ball );
-        }
+        packet.world = World.deserialize( byteBuffer );
 
         return packet;
     }
 
     ////////////////////////////////
     public long serverTime, clientTime;
-    public HashMap<Long, Ball> balls;
+    public World world;
 }

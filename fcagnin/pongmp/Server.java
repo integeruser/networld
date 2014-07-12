@@ -10,7 +10,6 @@ import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.HashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -42,10 +41,10 @@ public class Server {
         }
 
         // physics updates: steps of 15 ms
-        final HashMap<Long, Ball> balls = new HashMap<>();
+        final World world = new World();
         for ( int i = 0; i < 100; i++ ) {
             Ball ball = Ball.createRandom();
-            balls.put( ball.id, ball );
+            world.balls.put( ball.id, ball );
         }
 
         {
@@ -53,7 +52,7 @@ public class Server {
 
             service.scheduleAtFixedRate( () -> {
                 if ( !paused ) {
-                    for ( Ball ball : balls.values() ) { ball.update( 0.015f ); }
+                    for ( Ball ball : world.balls.values() ) { ball.update( 0.015f ); }
 
                     ticks++;
                     updates++;
@@ -68,7 +67,7 @@ public class Server {
             service.scheduleAtFixedRate( () -> {
                 if ( !paused ) {
                     Packet packet = new Packet();
-                    packet.balls = balls;
+                    packet.world = world;
 
                     ByteBuffer byteBuffer = ByteBuffer.allocate( packet.size() );
 

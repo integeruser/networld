@@ -78,9 +78,9 @@ public class Client {
                 final long interpTime = 100000000;
                 long renderingTime = System.nanoTime() - interpTime;
 
-                for ( long i : startPacket.balls.keySet() ) {
+                for ( long i : startPacket.world.balls.keySet() ) {
                     if ( !balls.containsKey( i ) ) {
-                        balls.put( i, new Ball( startPacket.balls.get( i ) ) );
+                        balls.put( i, new Ball( startPacket.world.balls.get( i ) ) );
                     }
                 }
 
@@ -99,7 +99,8 @@ public class Client {
                     float ratio = (endTime - renderingTime) / timeBetweenSnapshots;
 
                     for ( long i : balls.keySet() ) {
-                        balls.get( i ).interpolate( startPacket.balls.get( i ), endPacket.balls.get( i ), ratio );
+                        balls.get( i ).interpolate( startPacket.world.balls.get( i ), endPacket.world.balls.get( i ),
+                                ratio );
                     }
                 } else { System.out.println( "endPacket null" ); }
 
