@@ -1,7 +1,5 @@
 package pongmp;
 
-import pongmp.entities.Ball;
-
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
@@ -41,19 +39,13 @@ public class Server {
         }
 
         // physics updates: steps of 15 ms
-        final World world = new World();
-        for ( int i = 0; i < 100; i++ ) {
-            Ball ball = Ball.createRandom();
-            world.balls.put( ball.id, ball );
-        }
-
+        final World world = World.createRandom();
         {
             updates = 0;
 
             service.scheduleAtFixedRate( () -> {
                 if ( !paused ) {
-                    for ( Ball ball : world.balls.values() ) { ball.update( 0.015f ); }
-
+                    world.update( 0.015f );
                     ticks++;
                     updates++;
                 }
