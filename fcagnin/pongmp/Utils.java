@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.Random;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
@@ -136,8 +137,13 @@ public class Utils {
     }
 
     ////////////////////////////////
+    public static Random random = new Random();
+
+    public static int randomInt(int min, int max) {
+        return random.nextInt( (max - min) + 1 ) + min;
+    }
 
     public static float randomFloat(float min, float max) {
-        return (float) (Math.random() * (max - min) + min);
+        return random.nextFloat() * (max - min) + min;
     }
 }
