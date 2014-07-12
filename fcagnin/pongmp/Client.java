@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.Socket;
 import java.nio.ByteBuffer;
-import java.util.HashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -23,7 +22,7 @@ public class Client {
         Server.main( null ); // temporary
 
         final ConcurrentLinkedQueue<Packet> snapshots = new ConcurrentLinkedQueue<>();
-        final HashMap<Long, Ball> balls = new HashMap<>();
+        final World world = new World();
 
         ScheduledExecutorService service = Executors.newScheduledThreadPool( 1 );
 
@@ -79,8 +78,8 @@ public class Client {
                 long renderingTime = System.nanoTime() - interpTime;
 
                 for ( long i : startPacket.world.balls.keySet() ) {
-                    if ( !balls.containsKey( i ) ) {
-                        balls.put( i, new Ball( startPacket.world.balls.get( i ) ) );
+                    if ( !world.balls.containsKey( i ) ) {
+                        world.balls.put( i, new Ball( startPacket.world.balls.get( i ) ) );
                     }
                 }
 
@@ -98,15 +97,16 @@ public class Client {
 
                     float ratio = (endTime - renderingTime) / timeBetweenSnapshots;
 
-                    for ( long i : balls.keySet() ) {
-                        balls.get( i ).interpolate( startPacket.world.balls.get( i ), endPacket.world.balls.get( i ),
+                    for ( long i : world.balls.keySet() ) {
+                        world.balls.get( i ).interpolate( startPacket.world.balls.get( i ),
+                                endPacket.world.balls.get( i ),
                                 ratio );
                     }
                 } else { System.out.println( "endPacket null" ); }
 
                 // render
                 glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-                for ( Ball ball : balls.values() ) { ball.render(); }
+                world.render();
 
                 Display.update();
             }
