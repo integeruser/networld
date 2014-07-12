@@ -1,5 +1,6 @@
 package pongmp.entities;
 
+
 public abstract class AbstractObject {
     protected AbstractObject() {
         id = firstFreeId++;
