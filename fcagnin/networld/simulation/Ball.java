@@ -1,8 +1,8 @@
-package pongmp.entities;
+package networld.simulation;
 
+import networld.Utils;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
-import pongmp.Utils;
 
 import java.nio.ByteBuffer;
 

@@ -1,4 +1,7 @@
-package pongmp;
+package networld;
+
+import networld.networking.Packet;
+import networld.simulation.World;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;

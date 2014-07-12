@@ -1,6 +1,6 @@
-package pongmp;
+package networld.simulation;
 
-import pongmp.entities.Ball;
+import networld.Utils;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;

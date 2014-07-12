@@ -1,9 +1,11 @@
-package pongmp;
+package networld;
 
+import networld.networking.Packet;
+import networld.simulation.Ball;
+import networld.simulation.World;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
-import pongmp.entities.Ball;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -62,7 +64,7 @@ public class Client {
 
         // create window and start rendering
         {
-            Display.setTitle( "pongmp" );
+            Display.setTitle( "networld" );
             Display.setDisplayMode( new DisplayMode( 300, 300 ) );
             Display.setResizable( true );
             Display.setVSyncEnabled( true );

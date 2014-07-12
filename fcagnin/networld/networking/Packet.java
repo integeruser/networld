@@ -1,6 +1,7 @@
-package pongmp;
+package networld.networking;
 
-import pongmp.entities.Ball;
+import networld.simulation.Ball;
+import networld.simulation.World;
 
 import java.nio.ByteBuffer;
 

@@ -1,4 +1,4 @@
-package pongmp.entities;
+package networld.simulation;
 
 
 public abstract class AbstractObject {
