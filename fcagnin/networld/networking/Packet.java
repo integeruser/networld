@@ -1,6 +1,5 @@
 package networld.networking;
 
-import networld.simulation.Ball;
 import networld.simulation.World;
 
 import java.nio.ByteBuffer;
@@ -15,7 +14,7 @@ public class Packet {
 
     ////////////////////////////////
     public int size() {
-        return Long.BYTES + world.balls.size() * (Byte.BYTES + Ball.BYTES);
+        return Long.BYTES + world.size();
     }
 
     ////////////////////////////////

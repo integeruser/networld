@@ -20,6 +20,11 @@ public class World {
         for ( Ball ball : balls.values() ) { ball.render(); }
     }
 
+
+    public int size() {
+        return balls.size() * (Byte.BYTES + Ball.BYTES);
+    }
+
     ////////////////////////////////
     public static void serialize(World world, ByteBuffer byteBuffer) {
         for ( Ball ball : world.balls.values() ) {
