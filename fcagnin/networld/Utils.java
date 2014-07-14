@@ -13,21 +13,21 @@ import java.util.zip.Inflater;
 public class Utils {
     public static void main(String[] args) throws IOException {
         /*
-        Ball[] balls = new Ball[100];
-        for ( int i = 0; i < balls.length; i++ ) {
-            balls[i] = Ball.createRandom();
+        Ball[] abstractObjects = new Ball[100];
+        for ( int i = 0; i < abstractObjects.length; i++ ) {
+            abstractObjects[i] = Ball.createRandom();
         }
-        ByteBuffer byteBuffer = ByteBuffer.allocate( balls.length * Ball.BYTES );
-        for ( Ball b : balls ) {
+        ByteBuffer byteBuffer = ByteBuffer.allocate( abstractObjects.length * Ball.BYTES );
+        for ( Ball b : abstractObjects ) {
             byteBuffer.put( Ball.serialize( b ) );
         }
         byte[] game1 = byteBuffer.array();
 
-        for ( int i = 0; i < balls.length; i++ ) {
-            if ( i % 2 == 0 ) { balls[i].update( 0.15f * i ); }
+        for ( int i = 0; i < abstractObjects.length; i++ ) {
+            if ( i % 2 == 0 ) { abstractObjects[i].update( 0.15f * i ); }
         }
-        byteBuffer = ByteBuffer.allocate( balls.length * Ball.BYTES );
-        for ( Ball b : balls ) {
+        byteBuffer = ByteBuffer.allocate( abstractObjects.length * Ball.BYTES );
+        for ( Ball b : abstractObjects ) {
             byteBuffer.put( Ball.serialize( b ) );
         }
         byte[] game2 = byteBuffer.array();

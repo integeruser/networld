@@ -2,6 +2,7 @@ package networld;
 
 import networld.networking.Packet;
 import networld.simulation.Ball;
+import networld.simulation.Square;
 import networld.simulation.World;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.opengl.Display;
@@ -80,8 +81,16 @@ public class Client {
                 long renderingTime = System.nanoTime() - interpTime;
 
                 for ( int i = 0; i < World.MAX_OBJECTS; i++ ) {
-                    if ( startPacket.world.balls[i] != null ) {
-                        if ( world.balls[i] == null ) { world.balls[i] = new Ball( startPacket.world.balls[i] ); }
+                    if ( startPacket.world.abstractObjects[i] != null ) {
+                        if ( world.abstractObjects[i] == null ) {
+                            if ( startPacket.world.abstractObjects[i] instanceof Ball ) {
+                                world.abstractObjects[i] = new Ball( (Ball) startPacket.world.abstractObjects[i] );
+                            } else if ( startPacket.world.abstractObjects[i] instanceof Square ) {
+                                world.abstractObjects[i] = new Square( (Square) startPacket.world.abstractObjects[i] );
+                            } else {
+                                System.out.println( "unrecognized object" );
+                            }
+                        }
                     }
                 }
 
@@ -100,8 +109,9 @@ public class Client {
                     float ratio = (endTime - renderingTime) / timeBetweenSnapshots;
 
                     for ( int i = 0; i < World.MAX_OBJECTS; i++ ) {
-                        if ( world.balls[i] != null ) {
-                            world.balls[i].interpolate( startPacket.world.balls[i], endPacket.world.balls[i], ratio );
+                        if ( world.abstractObjects[i] != null ) {
+                            world.abstractObjects[i].interpolate( startPacket.world.abstractObjects[i],
+                                    endPacket.world.abstractObjects[i], ratio );
                         }
                     }
                 } else { System.out.println( "endPacket null" ); }
