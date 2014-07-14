@@ -3,44 +3,50 @@ package networld.simulation;
 import networld.Utils;
 
 import java.nio.ByteBuffer;
-import java.util.HashMap;
 
 
 public class World {
     public World() {
-        balls = new HashMap<>();
+        balls = new Ball[MAX_OBJECTS];
     }
 
     ////////////////////////////////
     public void update(float dt) {
-        for ( Ball ball : balls.values() ) { ball.update( dt ); }
+        for ( Ball ball : balls ) {
+            if ( ball != null ) { ball.update( dt ); }
+        }
     }
 
     public void render() {
-        for ( Ball ball : balls.values() ) { ball.render(); }
-    }
-
-
-    public int size() {
-        return balls.size() * (Byte.BYTES + Ball.BYTES);
+        for ( Ball ball : balls ) {
+            if ( ball != null ) { ball.render(); }
+        }
     }
 
     ////////////////////////////////
     public static void serialize(World world, ByteBuffer byteBuffer) {
-        for ( Ball ball : world.balls.values() ) {
-            byteBuffer.put( (byte) 127 );  // ball code
-            Ball.serialize( ball, byteBuffer );
+        for ( Ball ball : world.balls ) {
+            if ( ball instanceof Ball ) {
+                byteBuffer.put( CODE_BALL );
+                Ball.serialize( ball, byteBuffer );
+            } else {
+                byteBuffer.put( CODE_NULL );
+            }
         }
     }
 
     public static World deserialize(ByteBuffer byteBuffer) {
         World world = new World();
 
-        while ( byteBuffer.hasRemaining() ) {
-            byteBuffer.get();  // ball code
+        for ( int i = 0; i < MAX_OBJECTS; i++ ) {
+            byte code = byteBuffer.get();
+            switch ( code ) {
+                case CODE_BALL:
+                    world.balls[i] = Ball.deserialize( byteBuffer );
+                    break;
 
-            Ball ball = Ball.deserialize( byteBuffer );
-            world.balls.put( ball.id, ball );
+                default:
+            }
         }
 
         return world;
@@ -53,12 +59,18 @@ public class World {
         int numObjs = Utils.randomInt( 20, 100 );
         for ( int i = 0; i < numObjs; i++ ) {
             Ball ball = Ball.createRandom();
-            world.balls.put( ball.id, ball );
+            world.balls[i] = ball;
         }
 
         return world;
     }
 
     ////////////////////////////////
-    public HashMap<Long, Ball> balls;
+    public static final int MAX_OBJECTS = 100;
+    public static final int BYTES = MAX_OBJECTS * (Byte.BYTES + Ball.BYTES);
+
+    public Ball[] balls;
+
+    private static final byte CODE_NULL = 0;
+    private static final byte CODE_BALL = 127;
 }

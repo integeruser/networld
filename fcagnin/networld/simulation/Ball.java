@@ -10,13 +10,6 @@ import static org.lwjgl.opengl.GL11.*;
 
 
 public class Ball extends AbstractObject {
-    public Ball() {
-        position = new Vector2f();
-        velocity = new Vector2f();
-        radius = 0;
-        color = new Vector3f( 255f, 255f, 255f );
-    }
-
     public Ball(Vector2f position, Vector2f velocity, float radius, Vector3f color) {
         this.position = position;
         this.velocity = velocity;
@@ -25,14 +18,11 @@ public class Ball extends AbstractObject {
     }
 
     public Ball(Ball ball) {
-        id = ball.id;
-
         position = new Vector2f( ball.position );
         velocity = new Vector2f( ball.velocity );
         radius = ball.radius;
         color = new Vector3f( ball.color );
     }
-
 
     ////////////////////////////////
     @Override
@@ -80,20 +70,16 @@ public class Ball extends AbstractObject {
         glEnd();
     }
 
-
     ////////////////////////////////
     public Vector2f position;
     public Vector2f velocity;
     public float radius;
     public Vector3f color;
 
-
     ////////////////////////////////
-    public static final int BYTES = Long.BYTES + 2 * Float.BYTES + 2 * Float.BYTES + Float.BYTES + 3 * Float.BYTES;
+    public static final int BYTES = 2 * Float.BYTES + 2 * Float.BYTES + Float.BYTES + 3 * Float.BYTES;
 
     public static void serialize(Ball ball, ByteBuffer byteBuffer) {
-        byteBuffer.putLong( ball.id );
-
         byteBuffer.putFloat( ball.position.x );
         byteBuffer.putFloat( ball.position.y );
 
@@ -108,15 +94,12 @@ public class Ball extends AbstractObject {
     }
 
     public static Ball deserialize(ByteBuffer byteBuffer) {
-        long id = byteBuffer.getLong();
         Vector2f position = new Vector2f( byteBuffer.getFloat(), byteBuffer.getFloat() );
         Vector2f velocity = new Vector2f( byteBuffer.getFloat(), byteBuffer.getFloat() );
         float radius = byteBuffer.getFloat();
         Vector3f color = new Vector3f( byteBuffer.getFloat(), byteBuffer.getFloat(), byteBuffer.getFloat() );
 
-        Ball ball = new Ball( position, velocity, radius, color );
-        ball.id = id;
-        return ball;
+        return new Ball( position, velocity, radius, color );
     }
 
 
@@ -132,6 +115,7 @@ public class Ball extends AbstractObject {
                 Utils.randomFloat( 0f, 1f ),
                 Utils.randomFloat( 0f, 1f ),
                 Utils.randomFloat( 0f, 1f ) );
+
         return new Ball( position, velocity, radius, color );
     }
 }

@@ -14,7 +14,7 @@ public class Packet {
 
     ////////////////////////////////
     public int size() {
-        return Long.BYTES + world.size();
+        return Long.BYTES + World.BYTES;
     }
 
     ////////////////////////////////
