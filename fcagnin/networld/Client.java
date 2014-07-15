@@ -41,7 +41,23 @@ public class Client {
                     while ( true ) {
                         byte[] bytes = (byte[]) in.readObject();
                         byte[] decompressedBytes = Utils.decompress( bytes );
-                        ByteBuffer byteBuffer = ByteBuffer.wrap( decompressedBytes );
+
+                        byte[] orig = new byte[decompressedBytes.length];
+                        if ( prevBytes != null ) {
+                            for ( int i = 0; i < orig.length; i++ ) {
+                                orig[i] = (byte) (prevBytes[i] ^ decompressedBytes[i]);
+                            }
+                        } else {
+                            for ( int i = 0; i < orig.length; i++ ) {
+                                orig[i] = decompressedBytes[i];
+                            }
+                        }
+                        prevBytes = new byte[orig.length];
+                        for ( int i = 0; i < decompressedBytes.length; i++ ) {
+                            prevBytes[i] = orig[i];
+                        }
+
+                        ByteBuffer byteBuffer = ByteBuffer.wrap( orig );
                         Packet packet = Packet.deserialize( byteBuffer );
 
                         // reject late packets
@@ -127,4 +143,6 @@ public class Client {
             System.exit( -1 );
         }
     }
+
+    private static byte[] prevBytes;
 }

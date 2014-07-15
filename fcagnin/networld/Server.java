@@ -68,9 +68,27 @@ public class Server {
 
                     Packet.serialize( packet, byteBuffer );
                     byte[] bytes = byteBuffer.array();
-                    byte[] compressedBytes = bytes;
+
+                    byte[] delta = new byte[bytes.length];
+                    if ( prevBytes != null ) {
+                        assert bytes.length == prevBytes.length;
+
+                        for ( int i = 0; i < delta.length; i++ ) {
+                            delta[i] = (byte) (prevBytes[i] ^ bytes[i]);
+                        }
+                    } else {
+                        for ( int i = 0; i < delta.length; i++ ) {
+                            delta[i] = bytes[i];
+                        }
+                    }
+                    prevBytes = new byte[delta.length];
+                    for ( int i = 0; i < delta.length; i++ ) {
+                        prevBytes[i] = bytes[i];
+                    }
+
+                    byte[] compressedBytes = null;
                     try {
-                        compressedBytes = Utils.compress( bytes );
+                        compressedBytes = Utils.compress( delta );
                     } catch ( IOException e ) {
                         e.printStackTrace();
                         System.exit( -1 );
@@ -123,4 +141,6 @@ public class Server {
     private static long ticks;
     private static int updates, snapshots, packetSizeSum, compressedPacketSizeSum;
     private static boolean paused = true;
+
+    private static byte[] prevBytes;
 }
