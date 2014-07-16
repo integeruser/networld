@@ -186,9 +186,12 @@ public class Client {
                     g.fillRect( 0, 1, getWidth(), getHeight() );
 
                     g.setColor( Color.WHITE );
-                    g.drawString( "loops/s.: " + loops, 5, 15 );
-                    g.drawString( "avg. loop time: " + cumLoopTime / (1000000f * loops), 5, 45 );
-                    g.drawString( "vsync: " + vsync, 5, 30 );
+                    g.drawString( "loops/s: " + loops, 5, 15 );
+                    g.drawString( "avg. loop time: " + String.format( "%.2f", cumLoopTime / (1000000f * loops) ), 5,
+                            30 );
+
+                    g.setColor( vsync ? Color.GREEN : Color.RED );
+                    g.drawString( "vsync: " + vsync, 5, 45 );
 
                     loops = 0;
                     cumLoopTime = 0;
