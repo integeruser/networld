@@ -52,7 +52,7 @@ public class Client {
 
     ////////////////////////////////
     public void start() {
-        ExecutorService service = Executors.newFixedThreadPool( 2 );
+        ExecutorService service = Executors.newFixedThreadPool( 1 );
         service.submit( () -> {
             try {
                 int port = 1337;
@@ -137,11 +137,11 @@ public class Client {
 
             glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
             world.render();
-            Display.update();
 
             loops++;
             cumLoopTime += System.nanoTime() - time;
 
+            Display.update();
             Display.sync( 60 );
         }
 
