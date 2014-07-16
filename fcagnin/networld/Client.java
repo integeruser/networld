@@ -64,20 +64,10 @@ public class Client {
                     byte[] bytes = (byte[]) in.readObject();
                     byte[] decompressedBytes = Utils.decompress( bytes );
 
-                    byte[] orig = new byte[decompressedBytes.length];
-                    if ( prevBytes != null ) {
-                        for ( int i = 0; i < orig.length; i++ ) {
-                            orig[i] = (byte) (prevBytes[i] ^ decompressedBytes[i]);
-                        }
-                    } else {
-                        for ( int i = 0; i < orig.length; i++ ) {
-                            orig[i] = decompressedBytes[i];
-                        }
-                    }
-                    prevBytes = new byte[orig.length];
-                    for ( int i = 0; i < decompressedBytes.length; i++ ) {
-                        prevBytes[i] = orig[i];
-                    }
+                    byte[] orig = decompressedBytes;
+                    if ( prevBytes != null ) { orig = Utils.reconstruct( prevBytes, decompressedBytes ); }
+
+                    prevBytes = orig;
 
                     ByteBuffer byteBuffer = ByteBuffer.wrap( orig );
                     Packet packet = Packet.deserialize( byteBuffer );

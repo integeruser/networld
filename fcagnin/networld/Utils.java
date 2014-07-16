@@ -9,6 +9,31 @@ import java.util.zip.Inflater;
 
 
 public class Utils {
+    public static byte[] delta(byte[] from, byte[] to) {
+        assert from != null && to != null;
+        assert from.length == to.length;
+
+        byte[] res = new byte[from.length];
+        for ( int i = 0; i < res.length; i++ ) {
+            res[i] = (byte) (from[i] ^ to[i]);
+        }
+
+        return res;
+    }
+
+    public static byte[] reconstruct(byte[] from, byte[] delta) {
+        assert from != null && delta != null;
+        assert from.length == delta.length;
+
+        byte[] res = new byte[from.length];
+        for ( int i = 0; i < res.length; i++ ) {
+            res[i] = (byte) (from[i] ^ delta[i]);
+        }
+
+        return res;
+    }
+
+    ////////////////////////////////
     public static byte[] compress(byte[] data) throws IOException {
         Deflater deflater = new Deflater();
         deflater.setInput( data );

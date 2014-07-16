@@ -69,22 +69,10 @@ public class Server {
                     Packet.serialize( packet, byteBuffer );
                     byte[] bytes = byteBuffer.array();
 
-                    byte[] delta = new byte[bytes.length];
-                    if ( prevBytes != null ) {
-                        assert bytes.length == prevBytes.length;
+                    byte[] delta = bytes;
+                    if ( prevBytes != null ) { delta = Utils.delta( prevBytes, bytes ); }
 
-                        for ( int i = 0; i < delta.length; i++ ) {
-                            delta[i] = (byte) (prevBytes[i] ^ bytes[i]);
-                        }
-                    } else {
-                        for ( int i = 0; i < delta.length; i++ ) {
-                            delta[i] = bytes[i];
-                        }
-                    }
-                    prevBytes = new byte[delta.length];
-                    for ( int i = 0; i < delta.length; i++ ) {
-                        prevBytes[i] = bytes[i];
-                    }
+                    prevBytes = bytes;
 
                     byte[] compressedBytes = null;
                     try {
