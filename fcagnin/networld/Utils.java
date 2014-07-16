@@ -34,38 +34,37 @@ public class Utils {
     }
 
     ////////////////////////////////
-    public static byte[] compress(byte[] data) throws IOException {
+    public static byte[] compress(byte[] input) throws IOException {
         Deflater deflater = new Deflater();
-        deflater.setInput( data );
-
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream( data.length );
-
+        deflater.setInput( input );
         deflater.finish();
+
         byte[] buffer = new byte[1024];
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream( input.length );
         while ( !deflater.finished() ) {
-            int count = deflater.deflate( buffer ); // returns the generated code... index
+            int count = deflater.deflate( buffer );
             outputStream.write( buffer, 0, count );
         }
         outputStream.close();
-        byte[] output = outputStream.toByteArray();
 
-        return output;
+        return outputStream.toByteArray();
     }
 
-    public static byte[] decompress(byte[] data) throws IOException, DataFormatException {
+    public static byte[] decompress(byte[] input) throws IOException, DataFormatException {
         Inflater inflater = new Inflater();
-        inflater.setInput( data );
+        inflater.setInput( input );
 
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream( data.length );
         byte[] buffer = new byte[1024];
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream( input.length );
         while ( !inflater.finished() ) {
             int count = inflater.inflate( buffer );
             outputStream.write( buffer, 0, count );
         }
         outputStream.close();
-        byte[] output = outputStream.toByteArray();
 
-        return output;
+        inflater.end();
+
+        return outputStream.toByteArray();
     }
 
     ////////////////////////////////
