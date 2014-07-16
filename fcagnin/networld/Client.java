@@ -5,118 +5,164 @@ import networld.simulation.Ball;
 import networld.simulation.Square;
 import networld.simulation.World;
 import org.lwjgl.LWJGLException;
-import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 
 import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.net.Socket;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
-import java.util.concurrent.*;
+import java.util.Arrays;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.DataFormatException;
 
 import static org.lwjgl.opengl.GL11.*;
 
 
 public class Client {
-    public static void main(String[] args) throws LWJGLException, InterruptedException {
-        Server.main( null );  // temporary
-
-        Client client = new Client( 400, 400 );
-        client.start();
-
-        System.exit( 0 );  // temporary: kill all threads
-    }
-
-    ////////////////////////////////
-    public Client(int displayWidth, int displayHeight) throws LWJGLException {
-        vsync = true;
-
-        // create console before Display to not get window focus
-        console = new Console();
-        Point consoleLocation = console.getLocation();
-        // move console adjacent to Display
-        console.setLocation( consoleLocation.x + displayWidth / 2 + console.getWidth() / 2, consoleLocation.y );
-
-        Display.setTitle( "networld" );
-        Display.setDisplayMode( new DisplayMode( displayWidth, displayHeight ) );
-        Display.setVSyncEnabled( vsync );
-        Display.create();
-
-        snapshots = new ConcurrentLinkedQueue<>();
-        world = new World();
-    }
-
-    ////////////////////////////////
-    public void start() {
-        ExecutorService service = Executors.newFixedThreadPool( 1 );
-        service.submit( () -> {
+    public static void main(String[] args) throws IOException, LWJGLException {
+        /* start server on localhost at the specified port */
+        final InetAddress serverAddress = InetAddress.getByName( "127.0.0.1" );
+        final int serverPort = 1337;
+        Executors.newSingleThreadExecutor().execute( () -> {
             try {
-                int port = 1337;
-                Socket socket = new Socket( "localhost", port );
-                ObjectInputStream in = new ObjectInputStream( socket.getInputStream() );
-
-                Packet lastPacket = new Packet();
-                while ( true ) {
-                    byte[] bytes = (byte[]) in.readObject();
-                    byte[] decompressedBytes = Utils.decompress( bytes );
-
-                    byte[] orig = decompressedBytes;
-                    if ( prevBytes != null ) { orig = Utils.reconstruct( prevBytes, decompressedBytes ); }
-
-                    prevBytes = orig;
-
-                    ByteBuffer byteBuffer = ByteBuffer.wrap( orig );
-                    Packet packet = Packet.deserialize( byteBuffer );
-
-                    // reject late packets
-                    if ( lastPacket.serverTime < packet.serverTime ) {
-                        snapshots.add( packet );
-                        lastPacket = packet;
-                    }
-                }
-            } catch ( IOException | ClassNotFoundException | DataFormatException e ) {
+                Server server = new Server( serverPort );
+                server.waitConnection();  // blocking
+                server.start();
+            } catch ( SocketException e ) {
+                e.printStackTrace();
+                System.exit( -1 );
+            } catch ( IOException e ) {
                 e.printStackTrace();
                 System.exit( -1 );
             }
         } );
 
+        /* start client */
+        final int clientPort = 1338;
+        Client client = new Client( clientPort, serverAddress, serverPort );
+        client.start();
 
+        System.exit( 0 );  // kill all threads
+    }
+
+    ////////////////////////////////
+    public Client(int port, InetAddress serverAddress, int serverPort) throws LWJGLException, SocketException {
+        /* initialize settings */
+        int displayWidth = 400, displayHeight = 400;
+        vsynced = true;
+
+        /* create console (before creating Display to not get window focus */
+        console = new Console();
+        Point consoleLocation = console.getLocation();
+        console.setLocation( consoleLocation.x + displayWidth / 2 + console.getWidth() / 2, consoleLocation.y );
+
+        /* create LWJGL window */
+        Display.setTitle( "networld" );
+        Display.setDisplayMode( new DisplayMode( displayWidth, displayHeight ) );
+        Display.setVSyncEnabled( vsynced );
+        Display.create();
+
+        /* create socket */
+        socket = new DatagramSocket( port );
+        this.serverAddress = serverAddress;
+        this.serverPort = serverPort;
+
+        /* initialize others variables */
+        snapshots = new ConcurrentLinkedQueue<>();
+        world = new World();
+    }
+
+    ////////////////////////////////
+    public void start() throws IOException {
+        /* send request to server to initialize communications */
+        socket.send( new DatagramPacket( new byte[1], 1, serverAddress, serverPort ) );
+
+        /* start receiving packets */
+        Executors.newSingleThreadExecutor().execute( () -> {
+            byte[] buf = new byte[8192];
+            DatagramPacket datagramPacket = new DatagramPacket( buf, buf.length );
+
+            Packet lastPacket = new Packet();
+            while ( true ) {
+                /* receive packet from server */
+                try {
+                    socket.receive( datagramPacket );
+                } catch ( IOException e ) {
+                    e.printStackTrace();
+                    System.exit( -1 );
+                }
+
+                byte[] bytes = Arrays.copyOf( datagramPacket.getData(), datagramPacket.getLength() );
+
+                /* decompress the serialized Packet */
+                byte[] decompressedBytes = null;
+                try {
+                    decompressedBytes = Utils.decompress( bytes );
+                } catch ( IOException e ) {
+                    e.printStackTrace();
+                    System.exit( -1 );
+                } catch ( DataFormatException e ) {
+                    e.printStackTrace();
+                    System.exit( -1 );
+                }
+
+                /* reconstruct the correct Packet with the previous Packet */
+                byte[] reconstructed = decompressedBytes;
+                // if ( prevBytes != null ) { reconstructed = Utils.reconstruct( prevBytes, decompressedBytes ); }
+                prevBytes = reconstructed;
+
+                /* deserialize the received Packet */
+                ByteBuffer byteBuffer = ByteBuffer.wrap( reconstructed );
+                Packet packet = Packet.deserialize( byteBuffer );
+
+                /* add the received Packet to the queue */
+                if ( lastPacket.serverTime < packet.serverTime ) {
+                    snapshots.add( packet );
+                    lastPacket = packet;
+                }
+            }
+        } );
+
+        /* start rendering (main loop) */
+        final long interpTime = 100000000;
         Packet startPacket = new Packet(), endPacket = null;
         while ( !Display.isCloseRequested() ) {
             long time = System.nanoTime();
+            long renderingTime = time - interpTime;
 
-            processInput();
-
-            final long interpTime = 100000000;
-            long renderingTime = System.nanoTime() - interpTime;
-
-            for ( int i = 0; i < World.MAX_OBJECTS; i++ ) {
-                if ( startPacket.world.abstractObjects[i] != null ) {
-                    if ( world.abstractObjects[i] == null ) {
-                        if ( startPacket.world.abstractObjects[i] instanceof Ball ) {
-                            world.abstractObjects[i] = new Ball( (Ball) startPacket.world.abstractObjects[i] );
-                        } else if ( startPacket.world.abstractObjects[i] instanceof Square ) {
-                            world.abstractObjects[i] = new Square( (Square) startPacket.world
-                                    .abstractObjects[i] );
-                        } else {
-                            System.out.println( "unrecognized object" );
-                        }
-                    }
-                }
-            }
-
+            /* update World based on Packets */
             if ( endPacket == null ) { endPacket = snapshots.poll(); }
             while ( endPacket != null && endPacket.clientTime < renderingTime ) {
                 startPacket = endPacket;
+
+                /* add new objects to World */
+                for ( int i = 0; i < World.MAX_OBJECTS; i++ ) {
+                    if ( startPacket.world.abstractObjects[i] != null ) {
+                        if ( world.abstractObjects[i] == null ) {
+                            if ( startPacket.world.abstractObjects[i] instanceof Ball ) {
+                                world.abstractObjects[i] = new Ball( (Ball) startPacket.world.abstractObjects[i] );
+                            } else if ( startPacket.world.abstractObjects[i] instanceof Square ) {
+                                world.abstractObjects[i] = new Square( (Square) startPacket.world.abstractObjects[i] );
+                            } else {
+                                System.out.println( "unrecognized object" );
+                            }
+                        }
+                    }
+                }
+
                 endPacket = snapshots.poll();
             }
 
             if ( endPacket != null ) {
-                // update position: interpolate between snapshots
+                /* update position: interpolate between snapshots */
                 long startTime = startPacket.clientTime;
                 long endTime = endPacket.clientTime;
                 float timeBetweenSnapshots = endTime - startTime;
@@ -131,16 +177,22 @@ public class Client {
                                 ratio );
                     }
                 }
-            } else { System.out.println( "endPacket null" ); }
+            } else {
+                System.out.println( "endPacket null" );
+            }
 
+            /* adjust viewport */
             if ( Display.wasResized() ) { glViewport( 0, 0, Display.getWidth(), Display.getHeight() ); }
 
+            /* render World */
             glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
             world.render();
 
+            /* update stats */
             loops++;
             cumLoopTime += System.nanoTime() - time;
 
+            /* update LWJGL window and sync framerate */
             Display.update();
             Display.sync( 60 );
         }
@@ -148,31 +200,23 @@ public class Client {
         Display.destroy();
     }
 
-    private void processInput() {
-        while ( Keyboard.next() ) {
-            if ( Keyboard.getEventKeyState() ) {
-                if ( Keyboard.getEventKey() == Keyboard.KEY_V ) {
-                    vsync = !vsync;
-                    Display.setVSyncEnabled( vsync );
-                    System.out.println( " V PRESSED" );
-                }
-            }
-        }
-    }
-
     ////////////////////////////////
-    private final Console console;
+    private final DatagramSocket socket;
+    private final InetAddress serverAddress;
+    private final int serverPort;
 
     private final ConcurrentLinkedQueue<Packet> snapshots;
     private final World world;
 
     private byte[] prevBytes;
 
-    // stats / settings
-    private boolean vsync;
+    /* settings / stats */
+    private boolean vsynced;
     private long loops, cumLoopTime;
 
     ////////////////////////////////
+    private final Console console;
+
     private class Console extends JFrame {
         private Console() {
             super( "networld-console" );
@@ -190,8 +234,8 @@ public class Client {
                     g.drawString( "avg. loop time: " + String.format( "%.2f", cumLoopTime / (1000000f * loops) ), 5,
                             30 );
 
-                    g.setColor( vsync ? Color.GREEN : Color.RED );
-                    g.drawString( "vsync: " + vsync, 5, 45 );
+                    g.setColor( vsynced ? Color.GREEN : Color.RED );
+                    g.drawString( "vsynced: " + vsynced, 5, 45 );
 
                     loops = 0;
                     cumLoopTime = 0;
