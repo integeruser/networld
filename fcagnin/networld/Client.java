@@ -28,27 +28,36 @@ import static org.lwjgl.opengl.GL11.*;
 
 public class Client {
     public static void main(String[] args) throws IOException, LWJGLException {
-        /* start server on localhost at the specified port */
-        final InetAddress serverAddress = InetAddress.getByName( "127.0.0.1" );
-        final int serverPort = 1337;
-        Executors.newSingleThreadExecutor().execute( () -> {
-            try {
-                Server server = new Server( serverPort );
-                server.waitConnection();  // blocking
-                server.start();
-            } catch ( SocketException e ) {
-                e.printStackTrace();
-                System.exit( -1 );
-            } catch ( IOException e ) {
-                e.printStackTrace();
-                System.exit( -1 );
-            }
-        } );
+        if ( args.length == 3 ) {
+            /* start client */
+            final int clientPort = Integer.parseInt( args[0] );
+            final InetAddress serverAddress = InetAddress.getByName( args[1] );
+            final int serverPort = Integer.parseInt( args[2] );
+            Client client = new Client( clientPort, serverAddress, serverPort );
+            client.start();
+        } else {
+            /* start server on localhost at the specified port */
+            final InetAddress serverAddress = InetAddress.getByName( "127.0.0.1" );
+            final int serverPort = 1337;
+            Executors.newSingleThreadExecutor().execute( () -> {
+                try {
+                    Server server = new Server( serverPort );
+                    server.waitConnection();  // blocking
+                    server.start();
+                } catch ( SocketException e ) {
+                    e.printStackTrace();
+                    System.exit( -1 );
+                } catch ( IOException e ) {
+                    e.printStackTrace();
+                    System.exit( -1 );
+                }
+            } );
 
-        /* start client */
-        final int clientPort = 1338;
-        Client client = new Client( clientPort, serverAddress, serverPort );
-        client.start();
+            /* start client */
+            final int clientPort = 1338;
+            Client client = new Client( clientPort, serverAddress, serverPort );
+            client.start();
+        }
 
         System.exit( 0 );  // kill all threads
     }
@@ -78,10 +87,14 @@ public class Client {
         /* initialize others variables */
         snapshots = new ConcurrentLinkedQueue<>();
         world = new World();
+
+        System.out.println( "Client: created." );
     }
 
     ////////////////////////////////
     public void start() throws IOException {
+        System.out.println( "Client: starting..." );
+
         /* send request to server to initialize communications */
         socket.send( new DatagramPacket( new byte[1], 1, serverAddress, serverPort ) );
 

@@ -26,19 +26,27 @@ public class Server {
     ////////////////////////////////
     public Server(int port) throws SocketException {
         socket = new DatagramSocket( port );
+
+        System.out.println( "Server: created." );
     }
 
     ////////////////////////////////
     public void waitConnection() throws IOException {
+        System.out.println( "Server: waiting for connection..." );
+
         /* wait for client connection */
         DatagramPacket datagramPacket = new DatagramPacket( new byte[1], 1 );
         socket.receive( datagramPacket );
 
         clientAddress = datagramPacket.getAddress();
         clientPort = datagramPacket.getPort();
+
+        System.out.println( "Server: " + clientAddress + ":" + clientPort + " connected." );
     }
 
     public void start() {
+        System.out.println( "Server: starting..." );
+
         /* start physics simulation (fixed-dt = 15ms) */
         final World world = World.createRandom();
         updates = 0;
