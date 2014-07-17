@@ -53,8 +53,7 @@ public class Ball extends AbstractObject {
         Ball startBall = (Ball) start;
         Ball endBall = (Ball) end;
 
-        position.x = startBall.position.x + (1 - ratio) * (endBall.position.x - startBall.position.x);
-        position.y = startBall.position.y + (1 - ratio) * (endBall.position.y - startBall.position.y);
+        Utils.interpolate( startBall.position, endBall.position, ratio, position );
     }
 
     @Override

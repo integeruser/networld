@@ -53,8 +53,7 @@ public class Square extends AbstractObject {
         Square startBall = (Square) start;
         Square endBall = (Square) end;
 
-        position.x = startBall.position.x + (1 - ratio) * (endBall.position.x - startBall.position.x);
-        position.y = startBall.position.y + (1 - ratio) * (endBall.position.y - startBall.position.y);
+        Utils.interpolate( startBall.position, endBall.position, ratio, position );
     }
 
     @Override

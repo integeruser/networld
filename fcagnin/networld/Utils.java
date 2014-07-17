@@ -1,5 +1,7 @@
 package networld;
 
+import org.lwjgl.util.vector.Vector2f;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Random;
@@ -76,5 +78,11 @@ public class Utils {
 
     public static float randomFloat(float min, float max) {
         return random.nextFloat() * (max - min) + min;
+    }
+
+    ////////////////////////////////
+    public static void interpolate(Vector2f v1, Vector2f v2, float ratio, Vector2f res) {
+        res.x = v1.x + (1 - ratio) * (v2.x - v1.x);
+        res.y = v1.y + (1 - ratio) * (v2.y - v1.y);
     }
 }
