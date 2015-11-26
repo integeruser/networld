@@ -12,6 +12,15 @@ def w_byte(msg, b):
     msg.extend(struct.pack('>b', b))
 
 
+def r_short(msg):
+    s = msg[:2]
+    del msg[:2]
+    return struct.unpack('>h', s)[0]
+
+def w_short(msg, s):
+    msg.extend(struct.pack('>h', s))
+
+
 def r_int(msg):
     i = msg[:4]
     del msg[:4]
@@ -44,15 +53,17 @@ if __name__ == '__main__':
     def test01():
         msg = bytearray()
         w_byte(msg, 3)
+        w_short(msg, 6)
         w_int(msg, 4)
         w_float(msg, 5)
         w_vector(msg, p.Vector(1337, 31337, 42))
 
         b = r_byte(msg)
+        s = r_short(msg)
         i = r_int(msg)
         f = r_float(msg)
         v = r_vector(msg)
-        assert b == 3 and i == 4 and f == 5
+        assert b == 3 and s == 6 and i == 4 and f == 5
         assert v.x == 1337 and v.y == 31337 and v.z == 42
 
     test01()
