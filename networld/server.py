@@ -1,6 +1,7 @@
 import socket
 import sys
 import time
+import zlib
 
 import entities as e
 import networking as n
@@ -73,7 +74,8 @@ if __name__ == '__main__':
     while True:
         op = Operations.NOP if op == Operations.SNAPSHOT else Operations.SNAPSHOT
         packet = buildpacket(op, entities)
-        s.sendto(packet, caddr)
-        print("Sent %d bytes" % len(packet))
+        send_data = zlib.compress(packet)
+        s.sendto(send_data, caddr)
+        print("Sent %d bytes (decompressed: %d)" % (len(send_data), len(packet)))
         lastpacket = packet
         time.sleep(1)

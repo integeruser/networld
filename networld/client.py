@@ -1,5 +1,6 @@
 import socket
 import sys
+import zlib
 
 if __name__ == '__main__':
     if len(sys.argv) != 3:
@@ -11,17 +12,14 @@ if __name__ == '__main__':
     saddr = (shost, sport)
 
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
     # send any message to server to start a connection
-    import time
-    time.sleep(1)
     s.sendto(b'\xde\xad\xbe\xef', saddr)
-    print('sent')
 
     while True:
         recv_data, addr = s.recvfrom(2048)
         if addr != saddr:
             continue
 
-        print("Received %d bytes" % len(recv_data))
-        assert 4+1+1 <= len(recv_data) <= 1440
+        packet = zlib.decompress(recv_data)
+        print("Received %d bytes (decompressed: %d)" % (len(recv_data), len(packet)))
+        assert 4+1+1 <= len(packet) <= 1440
