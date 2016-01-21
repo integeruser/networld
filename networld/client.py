@@ -16,17 +16,17 @@ def receive():
 
         packet = bytearray(zlib.decompress(recv_data))
         assert 4+1+1 <= len(packet) <= 1440
-
         deque.append(packet)
         print('Received %d bytes (decompressed: %d)' % (len(recv_data), len(packet)))
 
-
-def process():
+def send():
     while True:
         while deque:
             packet = deque.popleft()
-            packetid = n.r_int(packet)
-            print('Processed packetid %d' % packetid)
+
+            send_data = zlib.compress(packet)
+            s.sendto(send_data, saddr)
+            print('Sent back %d bytes (decompressed: %d)' % (len(send_data), len(packet)))
         time.sleep(1)
 
 
@@ -45,4 +45,4 @@ if __name__ == '__main__':
 
     deque = collections.deque(maxlen=3)
     threading.Thread(target=receive).start()
-    threading.Thread(target=process).start()
+    threading.Thread(target=send).start()

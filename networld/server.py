@@ -1,6 +1,7 @@
 import collections
 import socket
 import sys
+import threading
 import time
 import zlib
 
@@ -49,6 +50,29 @@ def buildpacket(op, entities):
     return packet
 
 
+def receive():
+    while True:
+        recv_data, addr = s.recvfrom(2048)
+        if addr != caddr:
+            continue
+
+        packet = bytearray(zlib.decompress(recv_data))
+        assert 4+1+1 <= len(packet) <= 1440
+        print('Received back %d bytes (decompressed: %d)' % (len(recv_data), len(packet)))
+
+def send():
+    op = None
+    while True:
+        op = Operations.NOP if op == Operations.SNAPSHOT else Operations.SNAPSHOT
+        packet = buildpacket(op, entities)
+        deque.append((packet, False))
+
+        send_data = zlib.compress(packet)
+        s.sendto(send_data, caddr)
+        print('Sent %d bytes (decompressed: %d)' % (len(send_data), len(packet)))
+        time.sleep(1)
+
+
 if __name__ == '__main__':
     if len(sys.argv) != 2:
         print('Usage: %s sport' % sys.argv[0])
@@ -65,21 +89,11 @@ if __name__ == '__main__':
     recv_data, caddr = s.recvfrom(2048)
     print('Client %s connected, starting...' % str(caddr))
 
-
     deque = collections.deque(maxlen=3)
 
     entities = list()
     for i in range(3):
         entities.append(e.Cube(p.Vector.random(), i))
 
-    op = Operations.NOP
-    while True:
-        op = Operations.NOP if op == Operations.SNAPSHOT else Operations.SNAPSHOT
-        packet = buildpacket(op, entities)
-        deque.append((packet, False))
-
-        send_data = zlib.compress(packet)
-        s.sendto(send_data, caddr)
-        print('Sent %d bytes (decompressed: %d)' % (len(send_data), len(packet)))
-
-        time.sleep(1)
+    threading.Thread(target=receive).start()
+    threading.Thread(target=send).start()
