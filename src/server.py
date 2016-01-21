@@ -40,7 +40,9 @@ entities = list()
 for i in range(3):
     entities.append(e.Cube(p.Vector.random(), i))
 
-threading.Thread(target=receive).start()
+t = threading.Thread(target=receive)
+t.daemon = True
+t.start()
 
 # simulate updates to client
 while True:
