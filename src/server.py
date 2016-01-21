@@ -1,6 +1,6 @@
+import argparse
 import random
 import socket
-import sys
 import threading
 import time
 import zlib
@@ -23,13 +23,11 @@ def receive():
               (len(recv_data), len(packet)))
 
 
-if len(sys.argv) != 2:
-    print('Usage: %s sport' % sys.argv[0])
-    sys.exit(2)
+parser = argparse.ArgumentParser()
+parser.add_argument('sport', type=int)
+args = parser.parse_args()
 
-sport = int(sys.argv[1])
-saddr = ('127.0.0.1', sport)
-
+saddr = ('127.0.0.1', args.sport)
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 s.bind(saddr)
 
