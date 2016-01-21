@@ -1,3 +1,4 @@
+import collections
 import socket
 import sys
 import time
@@ -65,17 +66,20 @@ if __name__ == '__main__':
     print('Client %s connected, starting...' % str(caddr))
 
 
+    deque = collections.deque(maxlen=3)
+
     entities = list()
     for i in range(3):
         entities.append(e.Cube(p.Vector.random(), i))
 
-    lastpacket = None
     op = Operations.NOP
     while True:
         op = Operations.NOP if op == Operations.SNAPSHOT else Operations.SNAPSHOT
         packet = buildpacket(op, entities)
+        deque.append((packet, False))
+
         send_data = zlib.compress(packet)
         s.sendto(send_data, caddr)
         print("Sent %d bytes (decompressed: %d)" % (len(send_data), len(packet)))
-        lastpacket = packet
+
         time.sleep(1)
