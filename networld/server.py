@@ -80,6 +80,6 @@ if __name__ == '__main__':
 
         send_data = zlib.compress(packet)
         s.sendto(send_data, caddr)
-        print("Sent %d bytes (decompressed: %d)" % (len(send_data), len(packet)))
+        print('Sent %d bytes (decompressed: %d)' % (len(send_data), len(packet)))
 
         time.sleep(1)
