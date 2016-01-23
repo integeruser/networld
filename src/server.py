@@ -23,6 +23,24 @@ def receive():
               (len(recv_data), len(packet)))
 
 
+def send():
+    while True:
+        smsg = m.ServerMessage()
+        smsg.last_cmsg_received_seq = 42
+        smsg.op = random.choice([m.ServerOperations.NOP,
+                                 m.ServerOperations.SNAPSHOT])
+        smsg.server_time = time.perf_counter()
+        smsg.last_frame_num = 1338
+        smsg.entities = entities
+
+        packet = m.ServerMessage.tobytes(smsg)
+        send_data = zlib.compress(packet)
+        s.sendto(send_data, caddr)
+        print('Sent %d bytes (decompressed: %d)' %
+              (len(send_data), len(packet)))
+        time.sleep(abs(random.gauss(0.4, 0.3)))
+
+
 parser = argparse.ArgumentParser()
 parser.add_argument('sport', type=int)
 args = parser.parse_args()
@@ -43,19 +61,24 @@ for i in range(3):
 t = threading.Thread(target=receive)
 t.daemon = True
 t.start()
+t = threading.Thread(target=send)
+t.daemon = True
+t.start()
 
-# simulate updates to client
+# run simulation
+t = 0
+dt = 0.010
+acc = 0
+currenttime = time.perf_counter()
 while True:
-    smsg = m.ServerMessage()
-    smsg.last_cmsg_received_seq = 42
-    smsg.op = random.choice([m.ServerOperations.NOP,
-                             m.ServerOperations.SNAPSHOT])
-    smsg.server_time = time.perf_counter()
-    smsg.last_frame_num = 1338
-    smsg.entities = entities
+    newtime = time.perf_counter()
+    frametime = newtime - currenttime
+    if frametime > 0.250:
+        frametime = 0.250
+    currenttime = newtime
 
-    packet = m.ServerMessage.tobytes(smsg)
-    send_data = zlib.compress(packet)
-    s.sendto(send_data, caddr)
-    print('Sent %d bytes (decompressed: %d)' % (len(send_data), len(packet)))
-    time.sleep(abs(random.gauss(0.4, 0.3)))
+    acc += frametime
+    while acc >= dt:
+        # world.update(dt)
+        t += dt
+        acc -= dt
