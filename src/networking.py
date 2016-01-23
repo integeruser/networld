@@ -8,6 +8,7 @@ def r_byte(msg):
     del msg[:1]
     return struct.unpack('>b', b)[0]
 
+
 def w_byte(msg, b):
     msg.extend(struct.pack('>b', b))
 
@@ -16,6 +17,7 @@ def r_short(msg):
     s = msg[:2]
     del msg[:2]
     return struct.unpack('>h', s)[0]
+
 
 def w_short(msg, s):
     msg.extend(struct.pack('>h', s))
@@ -26,6 +28,7 @@ def r_int(msg):
     del msg[:4]
     return struct.unpack('>i', i)[0]
 
+
 def w_int(msg, i):
     msg.extend(struct.pack('>i', i))
 
@@ -35,6 +38,7 @@ def r_float(msg):
     del msg[:4]
     return struct.unpack('>f', f)[0]
 
+
 def w_float(msg, f):
     msg.extend(struct.pack('>f', f))
 
@@ -43,13 +47,25 @@ def r_vector(msg):
     x, y, z = r_float(msg), r_float(msg), r_float(msg)
     return p.Vector(x, y, z)
 
+
 def w_vector(msg, v):
     w_float(msg, v.x)
     w_float(msg, v.y)
     w_float(msg, v.z)
 
 
+def r_blob(msg, l):
+    b = msg[:l]
+    del msg[:l]
+    return b
+
+
+def w_blob(msg, b):
+    msg.extend(b)
+
+
 if __name__ == '__main__':
+
     def test01():
         msg = bytearray()
         w_byte(msg, 3)

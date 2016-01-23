@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 import argparse
+import itertools
 import random
 import socket
 import threading
 import time
 import zlib
 
-import entities as e
 import messages as m
-import networking as n
 import physics as p
+import world as w
+
+last_cmsg_received = -1
+world = w.World()
 
 
 def receive():
@@ -20,26 +23,48 @@ def receive():
 
         packet = bytearray(zlib.decompress(recv_data))
         assert 4 + 1 + 1 <= len(packet) <= 1440
-        print('Received back %d bytes (decompressed: %d)' %
-              (len(recv_data), len(packet)))
+        cmsg = m.ClientMessage.frombytes(packet)
+        last_cmsg_received = cmsg.id
+        print('Received id=%d (%d bytes, %d decompressed)' %
+              (last_cmsg_received, len(recv_data), len(packet)))
 
 
 def send():
-    while True:
-        smsg = m.ServerMessage()
-        smsg.last_cmsg_received_seq = 42
-        smsg.op = random.choice([m.ServerOperations.NOP,
-                                 m.ServerOperations.SNAPSHOT])
-        smsg.server_time = time.perf_counter()
-        smsg.last_frame_num = 1338
-        smsg.entities = entities
+    smsg_count = itertools.count()
 
-        packet = m.ServerMessage.tobytes(smsg)
-        send_data = zlib.compress(packet)
-        s.sendto(send_data, caddr)
-        print('Sent %d bytes (decompressed: %d)' %
-              (len(send_data), len(packet)))
-        time.sleep(abs(random.gauss(0.4, 0.3)))
+    t = 0
+    dt = 0.200  # seconds
+    acc = 0
+    currenttime = time.perf_counter()
+    while True:
+        newtime = time.perf_counter()
+        frametime = newtime - currenttime
+        if frametime > 0.250:
+            frametime = 0.250
+        currenttime = newtime
+
+        acc += frametime
+        while acc >= dt:
+            # snapshot and send
+            smsg = m.ServerMessage()
+            smsg.id = next(smsg_count)
+            smsg.last_cmsg_received = last_cmsg_received
+            smsg.op = random.choice([m.ServerOperations.NOP,
+                                     m.ServerOperations.SNAPSHOT])
+            if smsg.op == m.ServerOperations.SNAPSHOT:
+                smsg.server_time = time.perf_counter()
+                smsg.frame_count = frame_count
+                smsg.world = w.World.diff(w.World.dummy(), world)
+                smsg.world_len = len(smsg.world)
+                smsg.n_entities = len(world.entities)
+
+            packet = m.ServerMessage.tobytes(smsg)
+            send_data = zlib.compress(packet)
+            s.sendto(send_data, caddr)
+            print('Sent %d bytes (decompressed: %d)' %
+                  (len(send_data), len(packet)))
+            t += dt
+            acc -= dt
 
 
 parser = argparse.ArgumentParser()
@@ -55,10 +80,6 @@ print('Waiting for connection...')
 recv_data, caddr = s.recvfrom(2048)
 print('Client %s connected, starting...' % str(caddr))
 
-entities = list()
-for i in range(3):
-    entities.append(e.Cube(p.Vector.random(), i))
-
 t = threading.Thread(target=receive)
 t.daemon = True
 t.start()
@@ -68,8 +89,9 @@ t.start()
 
 # run simulation
 t = 0
-dt = 0.010
+dt = 0.010  # seconds
 acc = 0
+frame_count = 0
 currenttime = time.perf_counter()
 while True:
     newtime = time.perf_counter()
@@ -80,6 +102,7 @@ while True:
 
     acc += frametime
     while acc >= dt:
-        # world.update(dt)
+        world.update(dt)
         t += dt
         acc -= dt
+        frame_count += 1

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import collections
+import itertools
 import random
 import socket
 import threading
@@ -11,6 +12,9 @@ import pyglet
 
 import messages as m
 import networking as n
+import world as w
+
+last_smsg_received = -1
 
 
 def receive():
@@ -21,8 +25,11 @@ def receive():
 
         packet = bytearray(zlib.decompress(recv_data))
         assert 4 + 1 + 1 <= len(packet) <= 1440
-        print('Received %d bytes (decompressed: %d)' %
-              (len(recv_data), len(packet)))
+        smsg = m.ServerMessage.frombytes(packet)
+        last_smsg_received = smsg.id
+        print('Received id=%d (%d bytes, %d decompressed)' %
+              (last_smsg_received, len(recv_data), len(packet)))
+        # todo w.World.update(world, smsg.world_len, smsg.world)
 
 
 def send():
@@ -59,14 +66,17 @@ t.daemon = True
 t.start()
 
 if args.gui:
+    cmsg_count = itertools.count()
+
+    world = w.World.dummy()
     window = pyglet.window.Window()
 
     @window.event
     def on_key_press(symbol, modifiers):
         # simulate recording of client commands
         cmsg = m.ClientMessage()
-        cmsg.server_id = 423
-        cmsg.last_smsg_received_seq = 13375
+        cmsg.id = next(cmsg_count)
+        cmsg.last_smsg_received = last_smsg_received
         cmsg_deque.append(cmsg)
 
     @window.event
@@ -87,6 +97,7 @@ if args.gui:
                           pyglet.gl.GL_DEPTH_BUFFER_BIT)
         pyglet.gl.glMatrixMode(pyglet.gl.GL_MODELVIEW)
         pyglet.gl.glLoadIdentity()
+        world.draw()
 
     def update(dt):
         pass
