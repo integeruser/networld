@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import collections
 import itertools
 import random
 import socket
@@ -14,6 +15,8 @@ import world as w
 last_cmsg_received = -1
 world = w.World()
 frame_count = 0
+to_send_deque = collections.deque()
+smsg_count = itertools.count()
 
 
 def receive():
@@ -31,27 +34,33 @@ def receive():
 
 
 def send():
-    smsg_count = itertools.count()
     while True:
-        # snapshot and send
+        while to_send_deque:
+            smsg = to_send_deque.popleft()
+            packet = m.ServerMessage.tobytes(smsg)
+
+            n = sock.sendto(zlib.compress(packet), client_addr)
+            print('Sent id=%d op=%s bytes=%d' % (smsg.id, smsg.op, n))
+        time.sleep(0.050)
+
+
+def snapshot():
+    while True:
         smsg = m.ServerMessage()
         smsg.id = next(smsg_count)
         smsg.last_cmsg_received = last_cmsg_received
-        smsg.op = random.choice([m.ServerOperations.NOP,
-                                 m.ServerOperations.SNAPSHOT])
-        if smsg.op == m.ServerOperations.SNAPSHOT:
-            smsg.server_time = time.perf_counter()
-            smsg.frame_count = frame_count
-            smsg.world = w.World.diff(w.World.dummy(), world)
-            smsg.world_len = len(smsg.world)
-            smsg.n_entities = len(world.entities)
-
-        packet = m.ServerMessage.tobytes(smsg)
-        send_data = zlib.compress(packet)
-        sock.sendto(send_data, client_addr)
-        print('Sent %d bytes (decompressed: %d)' %
-              (len(send_data), len(packet)))
+        smsg.op = m.ServerOperations.NOP
+        # smsg.op = random.choice([m.ServerOperations.NOP,
+        #                          m.ServerOperations.SNAPSHOT])
+        # if smsg.op == m.ServerOperations.SNAPSHOT:
+        #     smsg.server_time = time.perf_counter()
+        #     smsg.frame_count = frame_count
+        #     smsg.world = w.World.diff(w.World.dummy(), world)
+        #     smsg.world_len = len(smsg.world)
+        #     smsg.n_entities = len(world.entities)
+        to_send_deque.append(smsg)
         time.sleep(0.300)
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument('port', type=int)
@@ -67,11 +76,12 @@ recv_data, client_addr = sock.recvfrom(2048)
 print('Client %s connected, starting...' % str(client_addr))
 
 threading.Thread(target=receive, daemon=True).start()
-threading.Thread(target=send,    daemon=True).start()
+threading.Thread(target=send, daemon=True).start()
+threading.Thread(target=snapshot, daemon=True).start()
 
 # run simulation
 t = 0
-dt = 0.010  # seconds
+dt = 0.010
 acc = 0
 current_time = time.perf_counter()
 while True:

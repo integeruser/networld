@@ -22,13 +22,13 @@ def receive():
         recv_data, addr = sock.recvfrom(2048)
         if addr != server_addr:
             continue
-
         packet = bytearray(zlib.decompress(recv_data))
-        assert 4 + 1 + 1 <= len(packet) <= 1440
+        assert len(packet) <= 1440
+
         smsg = m.ServerMessage.frombytes(packet)
         last_smsg_received = smsg.id
-        print('Received id=%d (%d bytes, %d decompressed)' %
-              (last_smsg_received, len(recv_data), len(packet)))
+        print('Received id=%d op=%s bytes=%d' %
+              (smsg.id, smsg.op, len(recv_data)))
         # todo w.World.update(world, smsg.world_len, smsg.world)
 
 
@@ -58,7 +58,7 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.sendto(b'\xde\xad\xbe\xef', server_addr)
 
 threading.Thread(target=receive, daemon=args.gui).start()
-threading.Thread(target=send,    daemon=True).start()
+threading.Thread(target=send, daemon=True).start()
 
 if args.gui:
     cmsg_count = itertools.count()
