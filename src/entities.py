@@ -1,5 +1,7 @@
 import abc
 
+import pyglet
+
 import networking as n
 import physics as p
 
@@ -75,6 +77,52 @@ class Cube(Entity):
 
     def __str__(self):
         return 'Cube: [%s, %f]' % (self.center, self.size)
+
+    def draw(self):
+        pyglet.gl.glPushMatrix()
+
+        pyglet.gl.glTranslatef(self.center.x, self.center.y, self.center.z)
+        pyglet.gl.glRotatef(self.orientation.x, 1, 0, 0)
+        pyglet.gl.glRotatef(self.orientation.y, 0, 1, 0)
+        pyglet.gl.glRotatef(self.orientation.z, 0, 0, 1)
+
+        pyglet.gl.glColor3f(self.color.x, self.color.y, self.color.z)
+
+        pyglet.gl.glPolygonMode(pyglet.gl.GL_FRONT_AND_BACK, pyglet.gl.GL_LINE)
+        pyglet.gl.glBegin(pyglet.gl.GL_QUADS)
+        pyglet.gl.glVertex3f(self.size / 2, self.size / 2, self.size / 2)
+        pyglet.gl.glVertex3f(-self.size / 2, self.size / 2, self.size / 2)
+        pyglet.gl.glVertex3f(-self.size / 2, -self.size / 2, self.size / 2)
+        pyglet.gl.glVertex3f(self.size / 2, -self.size / 2, self.size / 2)
+
+        pyglet.gl.glVertex3f(self.size / 2, self.size / 2, -self.size / 2)
+        pyglet.gl.glVertex3f(-self.size / 2, self.size / 2, -self.size / 2)
+        pyglet.gl.glVertex3f(-self.size / 2, -self.size / 2, -self.size / 2)
+        pyglet.gl.glVertex3f(self.size / 2, -self.size / 2, -self.size / 2)
+
+        pyglet.gl.glVertex3f(self.size / 2, self.size / 2, self.size / 2)
+        pyglet.gl.glVertex3f(self.size / 2, -self.size / 2, self.size / 2)
+        pyglet.gl.glVertex3f(self.size / 2, -self.size / 2, -self.size / 2)
+        pyglet.gl.glVertex3f(self.size / 2, self.size / 2, -self.size / 2)
+
+        pyglet.gl.glVertex3f(-self.size / 2, self.size / 2, self.size / 2)
+        pyglet.gl.glVertex3f(-self.size / 2, -self.size / 2, self.size / 2)
+        pyglet.gl.glVertex3f(-self.size / 2, -self.size / 2, -self.size / 2)
+        pyglet.gl.glVertex3f(-self.size / 2, self.size / 2, -self.size / 2)
+
+        pyglet.gl.glVertex3f(self.size / 2, self.size / 2, self.size / 2)
+        pyglet.gl.glVertex3f(-self.size / 2, self.size / 2, self.size / 2)
+        pyglet.gl.glVertex3f(-self.size / 2, self.size / 2, -self.size / 2)
+        pyglet.gl.glVertex3f(self.size / 2, self.size / 2, -self.size / 2)
+
+        pyglet.gl.glVertex3f(self.size / 2, -self.size / 2, self.size / 2)
+        pyglet.gl.glVertex3f(-self.size / 2, -self.size / 2, self.size / 2)
+        pyglet.gl.glVertex3f(-self.size / 2, -self.size / 2, -self.size / 2)
+        pyglet.gl.glVertex3f(self.size / 2, -self.size / 2, -self.size / 2)
+        pyglet.gl.glEnd()
+        pyglet.gl.glPolygonMode(pyglet.gl.GL_FRONT_AND_BACK, pyglet.gl.GL_FILL)
+
+        pyglet.gl.glPopMatrix()
 
     def update(self, dt):
         self.center.move(dt * self.speed, self.direction)
