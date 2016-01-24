@@ -80,10 +80,11 @@ if args.gui:
     @window.event
     def on_resize(width, height):
         pyglet.gl.glViewport(0, 0, width, height)
-        # pyglet.gl.glMatrixMode(pyglet.gl.GL_PROJECTION)
-        # pyglet.gl.glLoadIdentity()
-        # pyglet.gl.gluPerspective(45, width / height, 0.1, 1000)
-        # pyglet.gl.gluLookAt(2, 3, -6, 0, 0, 0, 0, 1, 0)
+        pyglet.gl.glMatrixMode(pyglet.gl.GL_PROJECTION)
+        pyglet.gl.glLoadIdentity()
+        pyglet.gl.gluPerspective(45, width / height, 0.1, 1000)
+        pyglet.gl.gluLookAt(2, 3, -6, 0, 0, 0, 0, 1, 0)
+        return pyglet.event.EVENT_HANDLED
 
     @window.event
     def on_draw():
@@ -92,6 +93,7 @@ if args.gui:
         pyglet.gl.glMatrixMode(pyglet.gl.GL_MODELVIEW)
         pyglet.gl.glLoadIdentity()
         world.draw()
+        return pyglet.event.EVENT_HANDLED
 
     def update(dt):
         pass
