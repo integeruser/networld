@@ -19,8 +19,8 @@ last_smsg_received = -1
 
 def receive():
     while True:
-        recv_data, addr = s.recvfrom(2048)
-        if addr != saddr:
+        recv_data, addr = sock.recvfrom(2048)
+        if addr != server_addr:
             continue
 
         packet = bytearray(zlib.decompress(recv_data))
@@ -38,24 +38,24 @@ def send():
             cmsg = cmsg_deque.popleft()
             packet = m.ClientMessage.tobytes(cmsg)
             send_data = zlib.compress(packet)
-            s.sendto(send_data, saddr)
+            sock.sendto(send_data, server_addr)
             print('Sent %d bytes (decompressed: %d)' %
                   (len(send_data), len(packet)))
         time.sleep(1)
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('shost')
-parser.add_argument('sport', type=int)
+parser.add_argument('hostname')
+parser.add_argument('port', type=int)
 parser.add_argument('-g', '--gui', action='store_true')
 args = parser.parse_args()
 
 cmsg_deque = collections.deque()
 
-saddr = (args.shost, args.sport)
-s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+server_addr = (args.hostname, args.port)
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 # send any message to server to start a connection
-s.sendto(b'\xde\xad\xbe\xef', saddr)
+sock.sendto(b'\xde\xad\xbe\xef', server_addr)
 
 t = threading.Thread(target=receive)
 if args.gui:

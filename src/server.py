@@ -17,8 +17,8 @@ world = w.World()
 
 def receive():
     while True:
-        recv_data, addr = s.recvfrom(2048)
-        if addr != caddr:
+        recv_data, addr = sock.recvfrom(2048)
+        if addr != client_addr:
             continue
 
         packet = bytearray(zlib.decompress(recv_data))
@@ -35,15 +35,15 @@ def send():
     t = 0
     dt = 0.200  # seconds
     acc = 0
-    currenttime = time.perf_counter()
+    current_time = time.perf_counter()
     while True:
-        newtime = time.perf_counter()
-        frametime = newtime - currenttime
-        if frametime > 0.250:
-            frametime = 0.250
-        currenttime = newtime
+        new_time = time.perf_counter()
+        frame_time = new_time - current_time
+        if frame_time > 0.250:
+            frame_time = 0.250
+        current_time = new_time
 
-        acc += frametime
+        acc += frame_time
         while acc >= dt:
             # snapshot and send
             smsg = m.ServerMessage()
@@ -60,7 +60,7 @@ def send():
 
             packet = m.ServerMessage.tobytes(smsg)
             send_data = zlib.compress(packet)
-            s.sendto(send_data, caddr)
+            sock.sendto(send_data, client_addr)
             print('Sent %d bytes (decompressed: %d)' %
                   (len(send_data), len(packet)))
             t += dt
@@ -68,17 +68,17 @@ def send():
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('sport', type=int)
+parser.add_argument('port', type=int)
 args = parser.parse_args()
 
-saddr = ('127.0.0.1', args.sport)
-s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-s.bind(saddr)
+server_addr = ('127.0.0.1', args.port)
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+sock.bind(server_addr)
 
 # wait for any message from client to start a connection
 print('Waiting for connection...')
-recv_data, caddr = s.recvfrom(2048)
-print('Client %s connected, starting...' % str(caddr))
+recv_data, client_addr = sock.recvfrom(2048)
+print('Client %s connected, starting...' % str(client_addr))
 
 t = threading.Thread(target=receive)
 t.daemon = True
@@ -92,15 +92,15 @@ t = 0
 dt = 0.010  # seconds
 acc = 0
 frame_count = 0
-currenttime = time.perf_counter()
+current_time = time.perf_counter()
 while True:
-    newtime = time.perf_counter()
-    frametime = newtime - currenttime
-    if frametime > 0.250:
-        frametime = 0.250
-    currenttime = newtime
+    new_time = time.perf_counter()
+    frame_time = new_time - current_time
+    if frame_time > 0.250:
+        frame_time = 0.250
+    current_time = new_time
 
-    acc += frametime
+    acc += frame_time
     while acc >= dt:
         world.update(dt)
         t += dt
