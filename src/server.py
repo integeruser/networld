@@ -13,6 +13,7 @@ import world as w
 
 last_cmsg_received = -1
 world = w.World()
+frame_count = 0
 
 
 def receive():
@@ -31,41 +32,26 @@ def receive():
 
 def send():
     smsg_count = itertools.count()
-
-    t = 0
-    dt = 0.200  # seconds
-    acc = 0
-    current_time = time.perf_counter()
     while True:
-        new_time = time.perf_counter()
-        frame_time = new_time - current_time
-        if frame_time > 0.250:
-            frame_time = 0.250
-        current_time = new_time
+        # snapshot and send
+        smsg = m.ServerMessage()
+        smsg.id = next(smsg_count)
+        smsg.last_cmsg_received = last_cmsg_received
+        smsg.op = random.choice([m.ServerOperations.NOP,
+                                 m.ServerOperations.SNAPSHOT])
+        if smsg.op == m.ServerOperations.SNAPSHOT:
+            smsg.server_time = time.perf_counter()
+            smsg.frame_count = frame_count
+            smsg.world = w.World.diff(w.World.dummy(), world)
+            smsg.world_len = len(smsg.world)
+            smsg.n_entities = len(world.entities)
 
-        acc += frame_time
-        while acc >= dt:
-            # snapshot and send
-            smsg = m.ServerMessage()
-            smsg.id = next(smsg_count)
-            smsg.last_cmsg_received = last_cmsg_received
-            smsg.op = random.choice([m.ServerOperations.NOP,
-                                     m.ServerOperations.SNAPSHOT])
-            if smsg.op == m.ServerOperations.SNAPSHOT:
-                smsg.server_time = time.perf_counter()
-                smsg.frame_count = frame_count
-                smsg.world = w.World.diff(w.World.dummy(), world)
-                smsg.world_len = len(smsg.world)
-                smsg.n_entities = len(world.entities)
-
-            packet = m.ServerMessage.tobytes(smsg)
-            send_data = zlib.compress(packet)
-            sock.sendto(send_data, client_addr)
-            print('Sent %d bytes (decompressed: %d)' %
-                  (len(send_data), len(packet)))
-            t += dt
-            acc -= dt
-
+        packet = m.ServerMessage.tobytes(smsg)
+        send_data = zlib.compress(packet)
+        sock.sendto(send_data, client_addr)
+        print('Sent %d bytes (decompressed: %d)' %
+              (len(send_data), len(packet)))
+        time.sleep(0.300)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('port', type=int)
@@ -87,7 +73,6 @@ threading.Thread(target=send,    daemon=True).start()
 t = 0
 dt = 0.010  # seconds
 acc = 0
-frame_count = 0
 current_time = time.perf_counter()
 while True:
     new_time = time.perf_counter()
