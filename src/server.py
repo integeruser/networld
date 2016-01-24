@@ -97,3 +97,4 @@ while True:
         t += dt
         acc -= dt
         frame_count += 1
+    time.sleep(0.005)
