@@ -80,12 +80,8 @@ print('Waiting for connection...')
 recv_data, client_addr = sock.recvfrom(2048)
 print('Client %s connected, starting...' % str(client_addr))
 
-t = threading.Thread(target=receive)
-t.daemon = True
-t.start()
-t = threading.Thread(target=send)
-t.daemon = True
-t.start()
+threading.Thread(target=receive, daemon=True).start()
+threading.Thread(target=send,    daemon=True).start()
 
 # run simulation
 t = 0

@@ -57,13 +57,8 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 # send any message to server to start a connection
 sock.sendto(b'\xde\xad\xbe\xef', server_addr)
 
-t = threading.Thread(target=receive)
-if args.gui:
-    t.daemon = True
-t.start()
-t = threading.Thread(target=send)
-t.daemon = True
-t.start()
+threading.Thread(target=receive, daemon=args.gui).start()
+threading.Thread(target=send,    daemon=True).start()
 
 if args.gui:
     cmsg_count = itertools.count()
