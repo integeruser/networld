@@ -28,7 +28,6 @@ class Entity(metaclass=abc.ABCMeta):
         msg = bytearray()
         assert len(vars(from_entity)) == len(vars(to_entity))
         for from_field, to_field in zip(vars(from_entity), vars(to_entity)):
-            assert type(from_field) == type(to_field)
             from_value = getattr(from_entity, from_field)
             to_value = getattr(to_entity, to_field)
 
