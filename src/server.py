@@ -24,13 +24,13 @@ def receive():
         recv_data, addr = sock.recvfrom(2048)
         if addr != client_addr:
             continue
-
         packet = bytearray(zlib.decompress(recv_data))
-        assert 4 + 1 + 1 <= len(packet) <= 1440
+        assert len(packet) <= 1440
+
         cmsg = m.ClientMessage.frombytes(packet)
         last_cmsg_received = cmsg.id
-        print('Received id=%d (%d bytes, %d decompressed)' %
-              (last_cmsg_received, len(recv_data), len(packet)))
+        print('Received id=%d op=%s bytes=%d' %
+              (smsg.id, smsg.op, len(recv_data)))
 
 
 def send():

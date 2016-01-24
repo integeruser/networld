@@ -37,10 +37,9 @@ def send():
         while cmsg_deque:
             cmsg = cmsg_deque.popleft()
             packet = m.ClientMessage.tobytes(cmsg)
-            send_data = zlib.compress(packet)
-            sock.sendto(send_data, server_addr)
-            print('Sent %d bytes (decompressed: %d)' %
-                  (len(send_data), len(packet)))
+
+            n = sock.sendto(zlib.compress(packet), server_addr)
+            print('Sent id=%d op=%s bytes=%d' % (cmsg.id, cmsg.op, n))
         time.sleep(1)
 
 
