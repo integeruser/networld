@@ -130,6 +130,33 @@ class Cube(Entity):
         self.center.move(dt * self.speed, self.direction)
 
 
+class Sphere(Entity):
+    def __init__(self, center, radius):
+        super().__init__()
+        self.center = center
+        self.size = radius
+        self.speed = 0
+        self.direction = p.Vector(0, 0, 0)
+        self.color = p.Vector(1, 1, 1)
+
+    def __str__(self):
+        return 'Sphere: [%s, %f]' % (self.center, self.size)
+
+    def draw(self):
+        pyglet.gl.glPushMatrix()
+
+        pyglet.gl.glTranslatef(self.center.x, self.center.y, self.center.z)
+
+        pyglet.gl.glColor3f(self.color.x, self.color.y, self.color.z)
+
+        raise NotImplementedError
+
+        pyglet.gl.glPopMatrix()
+
+    def update(self, dt):
+        self.center.move(dt * self.speed, self.direction)
+
+
 if __name__ == '__main__':
     from_entity = Cube(p.Vector(1, 2, 3), 1337)
     to_entity = Cube(p.Vector(4, 5, 6), 42)
@@ -138,5 +165,14 @@ if __name__ == '__main__':
     to_entity.color = p.Vector.random()
     Entity.update(from_entity, Entity.diff(from_entity, to_entity))
     assert from_entity == to_entity
+
+    from_entity = Sphere(p.Vector(1, 2, 3), 1337)
+    to_entity = Sphere(p.Vector(4, 5, 6), 42)
+    to_entity.direction = p.Vector.random()
+    to_entity.color = p.Vector.random()
+    Entity.update(from_entity, Entity.diff(from_entity, to_entity))
+    assert from_entity == to_entity
+
+    assert Cube(p.Vector(1, 2, 3), 1337) != Sphere(p.Vector(1, 2, 3), 1337)
 
     print('All tests passed!')
