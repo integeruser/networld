@@ -26,7 +26,7 @@ class Entity(metaclass=abc.ABCMeta):
     @staticmethod
     def diff(from_entity, to_entity):
         msg = bytearray()
-        assert len(vars(from_entity)) == len(vars(to_entity))
+        assert vars(from_entity).keys() == vars(to_entity).keys()
         for from_field, to_field in zip(vars(from_entity), vars(to_entity)):
             from_value = getattr(from_entity, from_field)
             to_value = getattr(to_entity, to_field)
@@ -63,6 +63,9 @@ class Entity(metaclass=abc.ABCMeta):
     def __init__(self):
         self.id = -1
 
+    def __eq__(self, other):
+        return type(self) is type(other) and vars(self) == vars(other)
+
 
 class Cube(Entity):
     def __init__(self, center, size):
@@ -72,7 +75,7 @@ class Cube(Entity):
         self.orientation = p.Vector(0, 0, 0)
         self.speed = 0
         self.direction = p.Vector(0, 0, 0)
-        self.color = p.Vector.random(0, 1)
+        self.color = p.Vector(1, 1, 1)
 
     def __str__(self):
         return 'Cube: [%s, %f]' % (self.center, self.size)
@@ -128,12 +131,12 @@ class Cube(Entity):
 
 
 if __name__ == '__main__':
+    from_entity = Cube(p.Vector(1, 2, 3), 1337)
+    to_entity = Cube(p.Vector(4, 5, 6), 42)
+    to_entity.orientation = p.Vector.random()
+    to_entity.direction = p.Vector.random()
+    to_entity.color = p.Vector.random()
+    Entity.update(from_entity, Entity.diff(from_entity, to_entity))
+    assert from_entity == to_entity
 
-    def test01():
-        from_entity = Cube(p.Vector(1, 2, 3), 1337)
-        to_entity = Cube(p.Vector(4, 5, 6), 42)
-        Entity.update(from_entity, Entity.diff(from_entity, to_entity))
-        assert from_entity.center == to_entity.center and from_entity.size == to_entity.size
-
-    test01()
     print('All tests passed!')
