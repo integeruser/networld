@@ -1,4 +1,5 @@
 import abc
+import enum
 
 import pyglet
 
@@ -8,29 +9,20 @@ import physics as p
 
 class Entity(metaclass=abc.ABCMeta):
     @staticmethod
-    def new(entity):
-        msg = bytearray()
-        for field in vars(entity):
-            value = getattr(entity, field)
-            n.w_byte(msg, 0x1)
-            if isinstance(value, int):
-                n.w_int(msg, value)
-            elif isinstance(value, float):
-                n.w_float(msg, value)
-            elif isinstance(value, p.Vector):
-                n.w_vector(msg, value)
-            else:
-                raise NotImplementedError
-        return msg
+    def new(entity_type, msg):
+        if entity_type == EntityType.CUBE:
+            return Cube.dummy().update(msg)
+        elif entity_type == EntityType.SPHERE:
+            return Sphere.dummy().update(msg)
+        else:
+            raise NotImplementedError
 
     @staticmethod
     def diff(from_entity, to_entity):
         msg = bytearray()
-        assert vars(from_entity).keys() == vars(to_entity).keys()
-        for from_field, to_field in zip(vars(from_entity), vars(to_entity)):
-            from_value = getattr(from_entity, from_field)
-            to_value = getattr(to_entity, to_field)
-
+        for var in vars(from_entity):
+            from_value = getattr(from_entity, var)
+            to_value = getattr(to_entity, var)
             if from_value == to_value:
                 n.w_byte(msg, 0x0)
             else:
@@ -45,29 +37,30 @@ class Entity(metaclass=abc.ABCMeta):
                     raise NotImplementedError
         return msg
 
-    @staticmethod
-    def update(entity, msg):
-        for field in vars(entity):
-            modified = n.r_byte(msg)
-            if modified:
-                value = vars(entity)[field]
+    def __eq__(self, other):
+        return vars(self) == vars(other)
+
+    def update(self, msg):
+        for var in vars(self):
+            updated = n.r_byte(msg)
+            if updated:
+                value = vars(self)[var]
                 if isinstance(value, int):
-                    setattr(entity, field, n.r_int(msg))
+                    setattr(self, var, n.r_int(msg))
                 elif isinstance(value, float):
-                    setattr(entity, field, n.r_float(msg))
+                    setattr(self, var, n.r_float(msg))
                 elif isinstance(value, p.Vector):
-                    setattr(entity, field, n.r_vector(msg))
+                    setattr(self, var, n.r_vector(msg))
                 else:
                     raise NotImplementedError
-
-    def __init__(self):
-        self.id = -1
-
-    def __eq__(self, other):
-        return type(self) is type(other) and vars(self) == vars(other)
+        return self
 
 
 class Cube(Entity):
+    @staticmethod
+    def dummy():
+        return Cube(p.Vector(1337, 1338, 1339), 13310)
+
     def __init__(self, center, size):
         super().__init__()
         self.center = center
@@ -76,9 +69,6 @@ class Cube(Entity):
         self.speed = 0
         self.direction = p.Vector(0, 0, 0)
         self.color = p.Vector(1, 1, 1)
-
-    def __str__(self):
-        return 'Cube: [%s, %f]' % (self.center, self.size)
 
     def draw(self):
         pyglet.gl.glPushMatrix()
@@ -126,11 +116,15 @@ class Cube(Entity):
 
         pyglet.gl.glPopMatrix()
 
-    def update(self, dt):
+    def tick(self, dt):
         self.center.move(dt * self.speed, self.direction)
 
 
 class Sphere(Entity):
+    @staticmethod
+    def dummy():
+        return Sphere(p.Vector(1337, 1338, 1339), 13310)
+
     def __init__(self, center, radius):
         super().__init__()
         self.center = center
@@ -138,9 +132,6 @@ class Sphere(Entity):
         self.speed = 0
         self.direction = p.Vector(0, 0, 0)
         self.color = p.Vector(1, 1, 1)
-
-    def __str__(self):
-        return 'Sphere: [%s, %f]' % (self.center, self.size)
 
     def draw(self):
         pyglet.gl.glPushMatrix()
@@ -153,24 +144,35 @@ class Sphere(Entity):
 
         pyglet.gl.glPopMatrix()
 
-    def update(self, dt):
+    def tick(self, dt):
         self.center.move(dt * self.speed, self.direction)
 
 
+class EntityType(enum.Enum):
+    CUBE = 0x1
+    SPHERE = 0x2
+
+
 if __name__ == '__main__':
+    to_entity = Cube(p.Vector(4, 5, 6), 42)
+    assert Entity.new(EntityType.CUBE, Entity.diff(Cube.dummy(), to_entity)) == to_entity
+
+    to_entity = Sphere(p.Vector(4, 5, 6), 42)
+    assert Entity.new(EntityType.SPHERE, Entity.diff(Sphere.dummy(), to_entity)) == to_entity
+
     from_entity = Cube(p.Vector(1, 2, 3), 1337)
     to_entity = Cube(p.Vector(4, 5, 6), 42)
     to_entity.orientation = p.Vector.random()
     to_entity.direction = p.Vector.random()
     to_entity.color = p.Vector.random()
-    Entity.update(from_entity, Entity.diff(from_entity, to_entity))
+    from_entity.update(Entity.diff(from_entity, to_entity))
     assert from_entity == to_entity
 
     from_entity = Sphere(p.Vector(1, 2, 3), 1337)
     to_entity = Sphere(p.Vector(4, 5, 6), 42)
     to_entity.direction = p.Vector.random()
     to_entity.color = p.Vector.random()
-    Entity.update(from_entity, Entity.diff(from_entity, to_entity))
+    from_entity.update(Entity.diff(from_entity, to_entity))
     assert from_entity == to_entity
 
     assert Cube(p.Vector(1, 2, 3), 1337) != Sphere(p.Vector(1, 2, 3), 1337)
