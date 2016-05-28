@@ -70,6 +70,9 @@ class Cube(Entity):
         self.direction = p.Vector(0, 0, 0)
         self.color = p.Vector(1, 1, 1)
 
+    def __str__(self):
+        return 'Cube[center=%s, size=%.02f]' % (self.center, self.size)
+
     def draw(self):
         pyglet.gl.glPushMatrix()
 
