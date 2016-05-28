@@ -93,7 +93,7 @@ while True:
 
     acc += frame_time
     while acc >= dt:
-        world.update(dt)
+        world.tick(dt)
         t += dt
         acc -= dt
         frame_count += 1
