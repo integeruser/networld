@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import collections
+import heapq
 import itertools
 import random
 import socket
@@ -14,33 +15,77 @@ import messages as m
 import networking as n
 import world as w
 
-last_smsg_received = -1
+
+def process():
+    to_process_buffer = []
+    while True:
+        while to_process_deque:
+            # extract a message from the process queue
+            smsg = to_process_deque.popleft()
+            # and push it in the process buffer
+            heapq.heappush(to_process_buffer, (smsg.id, smsg))
+
+        swap = []
+        global last_smsg_received_id
+        prev_last_smsg_received_id = last_smsg_received_id
+        while to_process_buffer:
+            # extract a message from the process buffer
+            smsg.id, smsg = heapq.heappop(to_process_buffer)
+
+            # check if it can be processed
+            if smsg.id <= last_smsg_received_id:
+                continue
+            elif smsg.id == last_smsg_received_id + 1:
+                # process it
+                if smsg.op == m.ServerOperations.SNAPSHOT:
+                    world.update(smsg.world)
+                # increment the count of received messages
+                last_smsg_received_id = smsg.id
+            else:
+                swap.append((smsg.id, smsg))
+                swap.extend(to_process_buffer)
+                break
+        to_process_buffer = swap
+
+        # acknowledge the arrival of the last valid message
+        assert last_smsg_received_id >= prev_last_smsg_received_id
+        if last_smsg_received_id > prev_last_smsg_received_id:
+            cmsg = m.ClientMessage()
+            cmsg.last_smsg_received = last_smsg_received_id
+            to_send_deque.append(cmsg)
+
+        time.sleep(0.050)
 
 
 def receive():
     while True:
+        # read from socket
         recv_data, addr = sock.recvfrom(2048)
         if addr != server_addr:
             continue
         packet = bytearray(zlib.decompress(recv_data))
         assert len(packet) <= 1440
 
+        # add the received message to the process queue
         smsg = m.ServerMessage.frombytes(packet)
-        last_smsg_received = smsg.id
-        print('Received id=%d op=%s bytes=%d' %
-              (smsg.id, smsg.op, len(recv_data)))
-        # todo w.World.update(world, smsg.world_len, smsg.world)
+        print('Received id=%d op=%s bytes=%d' % (smsg.id, smsg.op, len(recv_data)))
+        to_process_deque.append(smsg)
 
 
 def send():
+    cmsg_ids = itertools.count()
+
     while True:
-        while cmsg_deque:
-            cmsg = cmsg_deque.popleft()
+        while to_send_deque:
+            # extract a message from the send queue
+            cmsg = to_send_deque.popleft()
+            cmsg.id = next(cmsg_ids)  # to refactor
             packet = m.ClientMessage.tobytes(cmsg)
 
+            # write on socket
             n = sock.sendto(zlib.compress(packet), server_addr)
-            print('Sent id=%d op=%s bytes=%d' % (cmsg.id, cmsg.op, n))
-        time.sleep(1)
+            print('Sent id=%d bytes=%d' % (cmsg.id, n))
+        time.sleep(0.700)
 
 
 parser = argparse.ArgumentParser()
@@ -49,29 +94,29 @@ parser.add_argument('port', type=int)
 parser.add_argument('-g', '--gui', action='store_true')
 args = parser.parse_args()
 
-cmsg_deque = collections.deque()
+world = w.World()
 
+last_smsg_received_id = -1
+
+to_process_deque = collections.deque()
+to_send_deque = collections.deque()
+
+# init socket
 server_addr = (args.hostname, args.port)
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 # send any message to server to start a connection
 sock.sendto(b'\xde\xad\xbe\xef', server_addr)
 
+threading.Thread(target=process, daemon=True).start()
 threading.Thread(target=receive, daemon=args.gui).start()
 threading.Thread(target=send, daemon=True).start()
 
 if args.gui:
-    cmsg_count = itertools.count()
-
-    world = w.World.dummy()
     window = pyglet.window.Window()
 
     @window.event
     def on_key_press(symbol, modifiers):
-        # simulate recording of client commands
-        cmsg = m.ClientMessage()
-        cmsg.id = next(cmsg_count)
-        cmsg.last_smsg_received = last_smsg_received
-        cmsg_deque.append(cmsg)
+        pass
 
     @window.event
     def on_key_release(symbol, modifiers):
@@ -88,15 +133,14 @@ if args.gui:
 
     @window.event
     def on_draw():
-        pyglet.gl.glClear(pyglet.gl.GL_COLOR_BUFFER_BIT |
-                          pyglet.gl.GL_DEPTH_BUFFER_BIT)
+        pyglet.gl.glClear(pyglet.gl.GL_COLOR_BUFFER_BIT | pyglet.gl.GL_DEPTH_BUFFER_BIT)
         pyglet.gl.glMatrixMode(pyglet.gl.GL_MODELVIEW)
         pyglet.gl.glLoadIdentity()
         world.draw()
         return pyglet.event.EVENT_HANDLED
 
     def update(dt):
-        pass
+        world.tick(dt)
 
     pyglet.clock.schedule_interval(update, 1 / 60)
     pyglet.app.run()
