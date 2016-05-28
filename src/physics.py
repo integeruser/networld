@@ -18,7 +18,7 @@ class Vector:
         return isclose(self.x, other.x) and isclose(self.y, other.y) and isclose(self.z, other.z)
 
     def __str__(self):
-        return 'Vector: [%f, %f, %f]' % (self.x, self.y, self.z)
+        return 'Vector[%.02f, %.02f, %.02f]' % (self.x, self.y, self.z)
 
     def move(self, magnitude, direction):
         self.x += magnitude * direction.x
