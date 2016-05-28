@@ -20,7 +20,7 @@ class Entity(metaclass=abc.ABCMeta):
     @staticmethod
     def diff(from_entity, to_entity):
         msg = bytearray()
-        for var in vars(from_entity):
+        for var in sorted(vars(from_entity)):
             from_value = getattr(from_entity, var)
             to_value = getattr(to_entity, var)
             if from_value == to_value:
@@ -41,7 +41,7 @@ class Entity(metaclass=abc.ABCMeta):
         return vars(self) == vars(other)
 
     def update(self, msg):
-        for var in vars(self):
+        for var in sorted(vars(self)):
             updated = n.r_byte(msg)
             if updated:
                 value = vars(self)[var]
@@ -66,7 +66,7 @@ class Cube(Entity):
         self.center = center
         self.size = size
         self.orientation = p.Vector(0, 0, 0)
-        self.speed = 0
+        self.speed = 0.
         self.direction = p.Vector(0, 0, 0)
         self.color = p.Vector(1, 1, 1)
 
