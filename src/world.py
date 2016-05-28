@@ -104,7 +104,7 @@ class World:
                 del self.entities[entity_id]
             elif update_type == World.DIFF:
                 diff = n.r_blob(msg, n.r_byte(msg))
-                world.entities[entity_id].update(diff)
+                self.entities[entity_id].update(diff)
             else:
                 raise NotImplementedError
         return self
