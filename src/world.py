@@ -1,6 +1,11 @@
+import copy
+import threading
+
 import entities as e
 import networking as n
 import physics as p
+
+lock = threading.RLock()
 
 
 class World:
@@ -15,6 +20,8 @@ class World:
         diff = e.Entity.diff(from_world.boundaries, to_world.boundaries)
         n.w_byte(msg, len(diff))
         n.w_blob(msg, diff)
+
+        lock.acquire()
         # update entities
         for entity_id in from_world.entities:
             n.w_byte(msg, entity_id)
@@ -41,6 +48,7 @@ class World:
                     raise NotImplementedError
                 n.w_byte(msg, len(new))
                 n.w_blob(msg, new)
+        lock.release()
         return msg
 
     def __init__(self):
@@ -78,9 +86,12 @@ class World:
         self.ids += 1
 
     def draw(self):
-        self.boundaries.draw()
-        for entity in self.entities.values():
+        lock.acquire()
+        co = copy.deepcopy(self.entities)
+        lock.release()
+        for entity in co.values():
             entity.draw()
+        self.boundaries.draw()
 
     def tick(self, dt):
         for entity in self.entities.values():
