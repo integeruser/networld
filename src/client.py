@@ -3,6 +3,7 @@ import argparse
 import collections
 import heapq
 import itertools
+import os
 import random
 import socket
 import threading
@@ -58,9 +59,16 @@ def process():
 
 
 def receive():
+    sock.settimeout(3)
+
     while True:
         # read from socket
-        recv_data, addr = sock.recvfrom(2048)
+        try:
+            recv_data, addr = sock.recvfrom(2048)
+        except socket.timeout:
+            print('Timeout!')
+            os._exit(1)
+
         if addr != server_addr:
             continue
         packet = bytearray(zlib.decompress(recv_data))
