@@ -10,10 +10,35 @@ import threading
 import time
 import zlib
 
+import pyglet
+
 import entities as e
 import messages as m
 import physics as p
 import world as w
+
+
+def simulate():
+    # run simulation
+    t = 0
+    dt = 0.010
+    acc = 0
+    current_time = time.perf_counter()
+    frame_count = 0
+    while True:
+        new_time = time.perf_counter()
+        frame_time = new_time - current_time
+        if frame_time > 0.250:
+            frame_time = 0.250
+        current_time = new_time
+
+        acc += frame_time
+        while acc >= dt:
+            world.tick(dt)
+            t += dt
+            acc -= dt
+            frame_count += 1
+        time.sleep(0.005)
 
 
 def process():
@@ -108,6 +133,7 @@ def noise():
 
 parser = argparse.ArgumentParser()
 parser.add_argument('port', type=int)
+parser.add_argument('-g', '--gui', action='store_true')
 args = parser.parse_args()
 
 # create random world
@@ -136,29 +162,40 @@ print('Waiting for connection...')
 recv_data, client_addr = sock.recvfrom(2048)
 print('Client %s connected, starting...' % str(client_addr))
 
+threading.Thread(target=simulate, daemon=True).start()
 threading.Thread(target=process, daemon=True).start()
-threading.Thread(target=receive, daemon=True).start()
+threading.Thread(target=receive, daemon=args.gui).start()
 threading.Thread(target=send, daemon=True).start()
 threading.Thread(target=snapshot, daemon=True).start()
 threading.Thread(target=noise, daemon=True).start()
 
-# run simulation
-t = 0
-dt = 0.010
-acc = 0
-current_time = time.perf_counter()
-frame_count = 0
-while True:
-    new_time = time.perf_counter()
-    frame_time = new_time - current_time
-    if frame_time > 0.250:
-        frame_time = 0.250
-    current_time = new_time
+if args.gui:
+    window = pyglet.window.Window()
 
-    acc += frame_time
-    while acc >= dt:
-        world.tick(dt)
-        t += dt
-        acc -= dt
-        frame_count += 1
-    time.sleep(0.005)
+    @window.event
+    def on_key_press(symbol, modifiers):
+        pass
+
+    @window.event
+    def on_key_release(symbol, modifiers):
+        pass
+
+    @window.event
+    def on_resize(width, height):
+        pyglet.gl.glViewport(0, 0, width, height)
+        pyglet.gl.glMatrixMode(pyglet.gl.GL_PROJECTION)
+        pyglet.gl.glLoadIdentity()
+        pyglet.gl.gluPerspective(45, width / height, 0.1, 1000)
+        pyglet.gl.gluLookAt(2, 3, -6, 0, 0, 0, 0, 1, 0)
+        return pyglet.event.EVENT_HANDLED
+
+    @window.event
+    def on_draw():
+        pyglet.gl.glClear(pyglet.gl.GL_COLOR_BUFFER_BIT | pyglet.gl.GL_DEPTH_BUFFER_BIT)
+        pyglet.gl.glMatrixMode(pyglet.gl.GL_MODELVIEW)
+        pyglet.gl.glLoadIdentity()
+        world.draw()
+        return pyglet.event.EVENT_HANDLED
+
+    pyglet.clock.schedule_interval(lambda *args, **kwargs: None, 1 / 60)
+    pyglet.app.run()
