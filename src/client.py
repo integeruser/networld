@@ -110,7 +110,7 @@ to_process_deque = collections.deque()
 to_send_deque = collections.deque()
 
 # init socket
-server_addr = (args.hostname, args.port)
+server_addr = (socket.gethostbyname(args.hostname), args.port)
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 # send any message to server to start a connection
 sock.sendto(b'\xde\xad\xbe\xef', server_addr)
