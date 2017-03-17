@@ -122,21 +122,24 @@ class World:
 
 
 if __name__ == '__main__':
+    p.random.seed(1337)
+
     from_world = World()
     to_world = World()
     to_world.boundaries.color = p.Vector.random()
-    for _ in range(p.random.randint(1, 5)):
-        if p.random.random() < 0.5:
-            cube = e.Cube(p.Vector(0, 0, 0), p.random.randint(4, 19))
-            cube.speed = p.random.randint(3, 10)
-            cube.direction = p.Vector.random(-100, 100).normalize()
-            to_world.add_entity(cube)
-        else:
-            sphere = e.Sphere(p.Vector(0, 0, 0), p.random.randint(4, 19))
-            sphere.speed = p.random.randint(3, 10)
-            sphere.direction = p.Vector.random(-100, 100).normalize()
-            to_world.add_entity(sphere)
+    colors = [p.Vector(0x00/0xFF, 0x99/0xFF, 0xCC/0xFF), p.Vector(0xCC/0xFF, 0xFF/0xFF, 0xCC/0xFF), p.Vector(0x66/0xFF, 0xCC/0xFF, 0xFF/0xFF), p.Vector(0x00/0xFF, 0x33/0xFF, 0x99/0xFF)]
+    for i in range(4):
+        cube = e.Cube(p.Vector(0, 0, 0), 1)
+        cube.speed = p.random.randint(1, 3) * p.random.choice([-1, 1])
+        cube.direction = p.Vector.random(-0.5, 0.5).normalize()
+        cube.color = colors[i]
+        to_world.add_entity(cube)
     from_world.update(World.diff(from_world, to_world))
     assert from_world == to_world
 
-    print('All tests passed!')
+    import yaml
+    with open('world.yml', 'w') as f:
+        yaml.dump(to_world, f)
+    with open('world.yml') as f:
+        loaded_world = yaml.load(f)
+    assert from_world == loaded_world

@@ -11,6 +11,7 @@ import time
 import zlib
 
 import pyglet
+import yaml
 
 import entities as e
 import messages as m
@@ -136,12 +137,9 @@ parser.add_argument('port', type=int)
 parser.add_argument('-g', '--gui', action='store_true')
 args = parser.parse_args()
 
-# create random world
-world = w.World()
-c = e.Cube(p.Vector(0, 0, 0), 1)
-c.speed = p.random.randrange(-1, 3)
-c.direction = p.Vector.random(-0.5, 0.5)
-world.add_entity(c)
+# load world
+with open('world.yml') as f:
+    world = yaml.load(f)
 
 last_cmsg_received_id = -1
 
