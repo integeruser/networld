@@ -1,3 +1,4 @@
+import math
 import random
 
 
@@ -12,10 +13,10 @@ class Vector:
         self.z = z
 
     def __eq__(self, other):
-        def isclose(f1, f2, allowed_error=1e-4):
-            return abs(f1 - f2) <= allowed_error
-
-        return isclose(self.x, other.x) and isclose(self.y, other.y) and isclose(self.z, other.z)
+        return\
+            math.isclose(self.x, other.x, abs_tol=1e-4) and\
+            math.isclose(self.y, other.y, abs_tol=1e-4) and\
+            math.isclose(self.z, other.z, abs_tol=1e-4)
 
     def __str__(self):
         return 'Vector[%.02f, %.02f, %.02f]' % (self.x, self.y, self.z)
