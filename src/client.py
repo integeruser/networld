@@ -3,9 +3,11 @@ import argparse
 import collections
 import heapq
 import itertools
+import logging
 import os
 import random
 import socket
+import sys
 import threading
 import time
 import zlib
@@ -66,7 +68,7 @@ def receive():
         try:
             recv_data, addr = sock.recvfrom(2048)
         except socket.timeout:
-            print('Timeout!')
+            logger.debug('Timeout!')
             os._exit(1)
 
         if addr != server_addr:
@@ -76,7 +78,7 @@ def receive():
 
         # add the received message to the process queue
         smsg = m.ServerMessage.frombytes(packet)
-        print('Received id=%d op=%s bytes=%d' % (smsg.id, smsg.op, len(recv_data)))
+        logger.debug('Received id=%d op=%s bytes=%d' % (smsg.id, smsg.op, len(recv_data)))
         to_process_deque.append(smsg)
 
 
@@ -92,7 +94,7 @@ def send():
 
             # write on socket
             n = sock.sendto(zlib.compress(packet), server_addr)
-            print('Sent id=%d bytes=%d' % (cmsg.id, n))
+            logger.debug('Sent id=%d bytes=%d' % (cmsg.id, n))
         time.sleep(0.700)
 
 
@@ -101,6 +103,9 @@ parser.add_argument('hostname')
 parser.add_argument('port', type=int)
 parser.add_argument('-g', '--gui', action='store_true')
 args = parser.parse_args()
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 world = w.World()
 

@@ -4,8 +4,10 @@ import collections
 import copy
 import heapq
 import itertools
+import logging
 import random
 import socket
+import sys
 import threading
 import time
 import zlib
@@ -17,13 +19,6 @@ import entities as e
 import messages as m
 import physics as p
 import world as w
-
-
-def wait_for_client():
-    print('Waiting for connection...')
-    recv_data, client_addr = sock.recvfrom(2048)
-    print('Client %s connected, starting...' % str(client_addr))
-    return client_addr
 
 
 def simulate():
@@ -94,7 +89,7 @@ def receive():
 
         # add the received message to the process queue
         cmsg = m.ClientMessage.frombytes(packet)
-        print('Received id=%d bytes=%d' % (cmsg.id, len(recv_data)))
+        logger.debug('Received id=%d bytes=%d' % (cmsg.id, len(recv_data)))
         to_process_deque.append(cmsg)
 
 
@@ -114,7 +109,7 @@ def send():
 
             # write on socket
             n = sock.sendto(zlib.compress(packet), client_addr)
-            print('Sent id=%d op=%s bytes=%d' % (smsg.id, smsg.op, n))
+            logger.debug('Sent id=%d op=%s bytes=%d' % (smsg.id, smsg.op, n))
         time.sleep(0.150)
 
 
@@ -144,6 +139,9 @@ parser.add_argument('port', type=int)
 parser.add_argument('-g', '--gui', action='store_true')
 args = parser.parse_args()
 
+logger = logging.getLogger(__name__)
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+
 # load world
 with open('world.yml') as f:
     world = yaml.load(f)
@@ -162,8 +160,9 @@ snapshots = collections.deque()
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.bind(('127.0.0.1', args.port))
 
-# wait for a client
-client_addr = wait_for_client()
+logger.info('Waiting for a client...')
+_, client_addr = sock.recvfrom(2048)
+logger.info('Client %s connected, starting...' % str(client_addr))
 
 threading.Thread(target=simulate, daemon=True).start()
 threading.Thread(target=process, daemon=True).start()
