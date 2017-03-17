@@ -19,6 +19,13 @@ import physics as p
 import world as w
 
 
+def wait_for_client():
+    print('Waiting for connection...')
+    recv_data, client_addr = sock.recvfrom(2048)
+    print('Client %s connected, starting...' % str(client_addr))
+    return client_addr
+
+
 def simulate():
     # run simulation
     t = 0
@@ -116,7 +123,7 @@ def snapshot():
         smsg = m.ServerMessage()
         smsg.op = m.ServerOperations.SNAPSHOT
         smsg.server_time = time.perf_counter()
-        smsg.frame_count = -1 # todo
+        smsg.frame_count = -1  # todo
         smsg.world = w.World.diff(last_snapshot_rec, world)
         smsg.world_len = len(smsg.world)
         smsg.n_entities = len(world.entities)
@@ -152,13 +159,11 @@ last_snapshot_rec = serv_messages[0]
 snapshots = collections.deque()
 
 # init socket
-server_addr = ('127.0.0.1', args.port)
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock.bind(server_addr)
-# wait for any message from client to start a connection
-print('Waiting for connection...')
-recv_data, client_addr = sock.recvfrom(2048)
-print('Client %s connected, starting...' % str(client_addr))
+sock.bind(('127.0.0.1', args.port))
+
+# wait for a client
+client_addr = wait_for_client()
 
 threading.Thread(target=simulate, daemon=True).start()
 threading.Thread(target=process, daemon=True).start()
