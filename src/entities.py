@@ -1,5 +1,6 @@
 import abc
 import enum
+import math
 
 import pyglet
 
@@ -64,11 +65,20 @@ class Cube(Entity):
     def __init__(self, center, size):
         super().__init__()
         self.center = center
-        self.size = size
+        self.size = float(size)
         self.orientation = p.Vector(0, 0, 0)
-        self.speed = 0.
+        self.speed = float(0)
         self.direction = p.Vector(0, 0, 0)
         self.color = p.Vector(1, 1, 1)
+
+    def __eq__(self, other):
+        return\
+            self.center == other.center and\
+            math.isclose(self.size, other.size, abs_tol=1e-4) and\
+            self.orientation == other.orientation and\
+            math.isclose(self.speed, other.speed, abs_tol=1e-4) and\
+            self.direction == other.direction and\
+            self.color == other.color
 
     def __str__(self):
         return 'Cube[center=%s, size=%.02f]' % (self.center, self.size)
