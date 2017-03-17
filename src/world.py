@@ -124,7 +124,7 @@ if __name__ == '__main__':
     colors = [p.Vector(0x00/0xFF, 0x99/0xFF, 0xCC/0xFF), p.Vector(0xCC/0xFF, 0xFF/0xFF, 0xCC/0xFF), p.Vector(0x66/0xFF, 0xCC/0xFF, 0xFF/0xFF), p.Vector(0x00/0xFF, 0x33/0xFF, 0x99/0xFF)]
     for i in range(4):
         cube = e.Cube(p.Vector(0, 0, 0), 1)
-        cube.speed = p.random.randint(1, 3) * p.random.choice([-1, 1])
+        cube.speed = p.random.uniform(-3, 3)
         cube.direction = p.Vector.random(-0.5, 0.5).normalize()
         cube.color = colors[i]
         to_world.add_entity(cube)

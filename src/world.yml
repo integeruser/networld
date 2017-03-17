@@ -5,39 +5,39 @@ boundaries: !!python/object:entities.Cube
     z: 0.36584835924937553}
   direction: !!python/object:physics.Vector {x: 0, y: 0, z: 0}
   orientation: !!python/object:physics.Vector {x: 0, y: 0, z: 0}
-  size: 3
+  size: 3.0
   speed: 0.0
 entities:
   0: !!python/object:entities.Cube
     center: !!python/object:physics.Vector {x: 0, y: 0, z: 0}
     color: !!python/object:physics.Vector {x: 0.0, y: 0.6, z: 0.8}
-    direction: !!python/object:physics.Vector {x: 0.788265137805204, y: -0.4789481187156298,
-      z: 0.3863246977604485}
+    direction: !!python/object:physics.Vector {x: -0.6963218082480063, y: 0.6756204684258466,
+      z: -0.24222494091704594}
     orientation: !!python/object:physics.Vector {x: 0, y: 0, z: 0}
-    size: 1
-    speed: -3
+    size: 1.0
+    speed: 0.5147241234136293
   1: !!python/object:entities.Cube
     center: !!python/object:physics.Vector {x: 0, y: 0, z: 0}
     color: !!python/object:physics.Vector {x: 0.8, y: 1.0, z: 0.8}
-    direction: !!python/object:physics.Vector {x: -0.31435235833905517, y: 0.5713774008748668,
-      z: 0.7580966037228738}
+    direction: !!python/object:physics.Vector {x: 0.6237265800877058, y: -0.28450705901347856,
+      z: 0.7280253338061772}
     orientation: !!python/object:physics.Vector {x: 0, y: 0, z: 0}
-    size: 1
-    speed: 2
+    size: 1.0
+    speed: 1.7376769494941247
   2: !!python/object:entities.Cube
     center: !!python/object:physics.Vector {x: 0, y: 0, z: 0}
     color: !!python/object:physics.Vector {x: 0.4, y: 0.8, z: 1.0}
-    direction: !!python/object:physics.Vector {x: -0.17374004846308175, y: 0.3152393266928592,
-      z: 0.932972969847615}
+    direction: !!python/object:physics.Vector {x: 0.2652685818488419, y: 0.6998548120112011,
+      z: -0.6632011923908689}
     orientation: !!python/object:physics.Vector {x: 0, y: 0, z: 0}
-    size: 1
-    speed: -2
+    size: 1.0
+    speed: -1.7703239875345096
   3: !!python/object:entities.Cube
     center: !!python/object:physics.Vector {x: 0, y: 0, z: 0}
     color: !!python/object:physics.Vector {x: 0.0, y: 0.2, z: 0.6}
-    direction: !!python/object:physics.Vector {x: 0.834463234673535, y: -0.20764375059280987,
-      z: 0.5104460625942095}
+    direction: !!python/object:physics.Vector {x: -0.20718882486491894, y: -0.8893462843671932,
+      z: 0.4075978132097393}
     orientation: !!python/object:physics.Vector {x: 0, y: 0, z: 0}
-    size: 1
-    speed: 3
+    size: 1.0
+    speed: 1.9226257786988086
 ids: 4
