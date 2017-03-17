@@ -60,26 +60,20 @@ class World:
         return vars(self) == vars(other)
 
     def _handle_boundaries_collision(self, entity):
-        if entity.direction.x > 0:
-            if entity.center.x + entity.size / 2 > self.boundaries.center.x + self.boundaries.size / 2:
-                entity.direction.x = -entity.direction.x
-        else:
-            if entity.center.x - entity.size / 2 < self.boundaries.center.x - self.boundaries.size / 2:
-                entity.direction.x = -entity.direction.x
+        if entity.center.x + entity.size / 2 > self.boundaries.center.x + self.boundaries.size / 2:
+            entity.direction.x = -entity.direction.x
+        if entity.center.x - entity.size / 2 < self.boundaries.center.x - self.boundaries.size / 2:
+            entity.direction.x = -entity.direction.x
 
-        if entity.direction.y > 0:
-            if entity.center.y + entity.size / 2 > self.boundaries.center.y + self.boundaries.size / 2:
-                entity.direction.y = -entity.direction.y
-        else:
-            if entity.center.y - entity.size / 2 < self.boundaries.center.y - self.boundaries.size / 2:
-                entity.direction.y = -entity.direction.y
+        if entity.center.y + entity.size / 2 > self.boundaries.center.y + self.boundaries.size / 2:
+            entity.direction.y = -entity.direction.y
+        if entity.center.y - entity.size / 2 < self.boundaries.center.y - self.boundaries.size / 2:
+            entity.direction.y = -entity.direction.y
 
-        if entity.direction.z > 0:
-            if entity.center.z + entity.size / 2 > self.boundaries.center.z + self.boundaries.size / 2:
-                entity.direction.z = -entity.direction.z
-        else:
-            if entity.center.z - entity.size / 2 < self.boundaries.center.z - self.boundaries.size / 2:
-                entity.direction.z = -entity.direction.z
+        if entity.center.z + entity.size / 2 > self.boundaries.center.z + self.boundaries.size / 2:
+            entity.direction.z = -entity.direction.z
+        if entity.center.z - entity.size / 2 < self.boundaries.center.z - self.boundaries.size / 2:
+            entity.direction.z = -entity.direction.z
 
     def add_entity(self, entity):
         self.entities[self.ids] = entity
