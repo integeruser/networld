@@ -98,15 +98,6 @@ def send():
         time.sleep(0.700)
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument('hostname')
-parser.add_argument('port', type=int)
-parser.add_argument('-g', '--gui', action='store_true')
-args = parser.parse_args()
-
-logger = logging.getLogger(__name__)
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-
 world = w.World()
 
 last_smsg_received_id = -1
@@ -114,14 +105,26 @@ last_smsg_received_id = -1
 to_process_deque = collections.deque()
 to_send_deque = collections.deque()
 
-# init socket
-server_addr = (socket.gethostbyname(args.hostname), args.port)
+
+parser = argparse.ArgumentParser()
+parser.add_argument('host')
+parser.add_argument('port', type=int)
+parser.add_argument('-g', '--gui', action='store_true')
+args = parser.parse_args()
+
+# load the logger
+logger = logging.getLogger(__name__)
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+
+# create the client socket
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-# send any message to server to start a connection
+# connect to the server
+server_addr = (socket.gethostbyname(args.host), args.port)
 sock.sendto(b'\xde\xad\xbe\xef', server_addr)
 
-threading.Thread(target=process, daemon=True).start()
-threading.Thread(target=receive, daemon=args.gui).start()
+# start the simulation
+threading.Thread(target=process, daemon=args.gui).start()
+threading.Thread(target=receive, daemon=True).start()
 threading.Thread(target=send, daemon=True).start()
 
 if args.gui:

@@ -21,8 +21,7 @@ import physics as p
 import world as w
 
 
-def simulate():
-    # run simulation
+def update():
     t = 0
     dt = 0.010
     acc = 0
@@ -78,6 +77,20 @@ def process():
         time.sleep(0.050)
 
 
+def snapshot():
+    while True:
+        for client in clients:
+            smsg = m.ServerMessage()
+            smsg.op = m.ServerOperations.SNAPSHOT
+            smsg.server_time = time.perf_counter()
+            smsg.frame_count = -1  # todo
+            smsg.world = w.World.diff(last_snapshot_rec[client], world)
+            smsg.world_len = len(smsg.world)
+            smsg.n_entities = len(world.entities)
+            to_send_deque.append((client, smsg))
+            time.sleep(0.300)
+
+
 def receive():
     while True:
         # read from socket
@@ -119,20 +132,6 @@ def send():
         time.sleep(0.150)
 
 
-def snapshot():
-    while True:
-        for client in clients:
-            smsg = m.ServerMessage()
-            smsg.op = m.ServerOperations.SNAPSHOT
-            smsg.server_time = time.perf_counter()
-            smsg.frame_count = -1  # todo
-            smsg.world = w.World.diff(last_snapshot_rec[client], world)
-            smsg.world_len = len(smsg.world)
-            smsg.n_entities = len(world.entities)
-            to_send_deque.append((client, smsg))
-            time.sleep(0.300)
-
-
 def noise():
     while True:
         for client in clients:
@@ -141,18 +140,6 @@ def noise():
             to_send_deque.append((client, smsg))
             time.sleep(0.200)
 
-
-parser = argparse.ArgumentParser()
-parser.add_argument('port', type=int)
-parser.add_argument('-g', '--gui', action='store_true')
-args = parser.parse_args()
-
-logger = logging.getLogger(__name__)
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-
-# load world
-with open('world.yml') as f:
-    world = yaml.load(f)
 
 last_cmsg_received_id = collections.defaultdict(lambda: -1)
 
@@ -164,21 +151,36 @@ last_snapshot_rec = collections.defaultdict(lambda: w.World())
 
 snapshots = collections.deque()
 
-# init sockets
-sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock.bind(('127.0.0.1', args.port))
 
-# start accepting clients
+parser = argparse.ArgumentParser()
+parser.add_argument('port', type=int)
+parser.add_argument('-g', '--gui', action='store_true')
+args = parser.parse_args()
+
+# load the logger
+logger = logging.getLogger(__name__)
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+
+# create and bind the server socket
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+sock.bind(('0.0.0.0', args.port))
+
+# wait for a client to connect
 clients = []
 threading.Thread(target=receive, daemon=True).start()
-logger.info('Waiting for a client...')
+logger.info('Waiting for a client')
 while not clients:
     time.sleep(0.5)
 
-threading.Thread(target=simulate, daemon=args.gui).start()
+# load the world to simulate
+with open('world.yml') as f:
+    world = yaml.load(f)
+
+# start the simulation
+threading.Thread(target=update, daemon=args.gui).start()
 threading.Thread(target=process, daemon=True).start()
-threading.Thread(target=send, daemon=True).start()
 threading.Thread(target=snapshot, daemon=True).start()
+threading.Thread(target=send, daemon=True).start()
 threading.Thread(target=noise, daemon=True).start()
 
 if args.gui:
