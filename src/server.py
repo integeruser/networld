@@ -44,35 +44,32 @@ def update():
 
 
 def process():
-    to_process_buffer = []
+    to_process_minheaps = collections.defaultdict(list)
+
     while True:
+        # move messages from process queue to min-heaps
         while to_process_deque:
-            # extract a message from the process queue
-            client, cmsg = to_process_deque.popleft()
-            # and push it in the process buffer
-            heapq.heappush(to_process_buffer, (client, cmsg.id, cmsg))
+            client, c_msg = to_process_deque.popleft()
+            priority = c_msg.id
+            heapq.heappush(to_process_minheaps[client], (priority, c_msg))
 
-        swap = []
-        global last_cmsg_received_id
-        while to_process_buffer:
-            # extract a message from the process buffer
-            client, cmsg_id, cmsg = heapq.heappop(to_process_buffer)
-
-            # check if it can be processed
-            if cmsg.id <= last_cmsg_received_id[client]:
-                continue
-            elif cmsg.id == last_cmsg_received_id[client] + 1:
-                # process it
-                global serv_messages
-                global last_snapshot_rec
-                last_snapshot_rec[client] = serv_messages[client][cmsg.last_smsg_received]
-                # increment the count of received messages
-                last_cmsg_received_id[client] = cmsg.id
-            else:
-                swap.append((client, cmsg.id, cmsg))
-                swap.extend(to_process_buffer)
-                break
-        to_process_buffer = swap
+        for client in to_process_minheaps:
+            while to_process_minheaps[client]:
+                # extract the next message with smallest id
+                priority, c_msg = heapq.heappop(to_process_minheaps[client])
+                if c_msg.id <= last_cmsg_received_id[client]:
+                    # discard the message
+                    continue
+                elif c_msg.id == last_cmsg_received_id[client] + 1:
+                    # process the message
+                    last_snapshot_rec[client] = serv_messages[client][c_msg.last_smsg_received]
+                    # increment the count of received messages
+                    last_cmsg_received_id[client] = c_msg.id
+                else:
+                    # reinsert the message in the min-heap and stop
+                    logger.warning('Missing messages from %s' % str(client))
+                    heapq.heappush(to_process_minheaps[client], (priority, c_msg))
+                    break
 
         time.sleep(0.050)
 
