@@ -21,14 +21,6 @@ import physics as p
 import world as w
 
 
-def accept():
-    while True:
-        _, client = sock_clients.recvfrom(2048)
-        if client not in clients:
-            clients.append(client)
-            logger.info('Client %s connected' % str(client))
-
-
 def simulate():
     # run simulation
     t = 0
@@ -91,7 +83,13 @@ def receive():
         # read from socket
         recv_data, addr = sock.recvfrom(2048)
         if addr not in clients:
+            if recv_data == b'\xde\xad\xbe\xef':
+                logger.info('Client %s connected' % str(addr))
+                clients.append(addr)
+            else:
+                logger.warning('Client %s attempted to reconnect' % str(addr))
             continue
+
         packet = bytearray(zlib.decompress(recv_data))
         assert len(packet) <= 1440
 
@@ -168,21 +166,17 @@ snapshots = collections.deque()
 
 # init sockets
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock.bind(('127.0.0.1', args.port+1))
+sock.bind(('127.0.0.1', args.port))
 
-# todo swap sockets
-sock_clients = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock_clients.bind(('127.0.0.1', args.port))
+# start accepting clients
 clients = []
-
-threading.Thread(target=accept, daemon=True).start()
+threading.Thread(target=receive, daemon=True).start()
 logger.info('Waiting for a client...')
 while not clients:
     time.sleep(0.5)
 
-threading.Thread(target=simulate, daemon=True).start()
+threading.Thread(target=simulate, daemon=args.gui).start()
 threading.Thread(target=process, daemon=True).start()
-threading.Thread(target=receive, daemon=args.gui).start()
 threading.Thread(target=send, daemon=True).start()
 threading.Thread(target=snapshot, daemon=True).start()
 threading.Thread(target=noise, daemon=True).start()
