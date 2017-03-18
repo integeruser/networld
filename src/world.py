@@ -121,13 +121,20 @@ if __name__ == '__main__':
     from_world = World()
     to_world = World()
     to_world.boundaries.color = p.Vector.random()
-    colors = [p.Vector(0x00/0xFF, 0x99/0xFF, 0xCC/0xFF), p.Vector(0xCC/0xFF, 0xFF/0xFF, 0xCC/0xFF), p.Vector(0x66/0xFF, 0xCC/0xFF, 0xFF/0xFF), p.Vector(0x00/0xFF, 0x33/0xFF, 0x99/0xFF)]
-    for i in range(4):
+    colors = [p.Vector(0x00/0xFF, 0x99/0xFF, 0xCC/0xFF), p.Vector(0xCC/0xFF, 0xFF/0xFF, 0xCC/0xFF)]
+    for i in range(2):
         cube = e.Cube(p.Vector(0, 0, 0), 1)
         cube.speed = p.random.uniform(-3, 3)
         cube.direction = p.Vector.random(-0.5, 0.5).normalize()
         cube.color = colors[i]
         to_world.add_entity(cube)
+    colors = [p.Vector(0x66/0xFF, 0xCC/0xFF, 0xFF/0xFF), p.Vector(0x00/0xFF, 0x33/0xFF, 0x99/0xFF)]
+    for i in range(2):
+        sphere = e.Sphere(p.Vector(0, 0, 0), p.random.uniform(0.4, 0.8))
+        sphere.speed = p.random.uniform(-3, 3)
+        sphere.direction = p.Vector.random(-0.5, 0.5).normalize()
+        sphere.color = colors[i]
+        to_world.add_entity(sphere)
     from_world.update(World.diff(from_world, to_world))
     assert from_world == to_world
 

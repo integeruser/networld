@@ -141,10 +141,18 @@ class Sphere(Entity):
     def __init__(self, center, radius):
         super().__init__()
         self.center = center
-        self.size = radius
-        self.speed = 0
+        self.size = 2 * float(radius)
+        self.speed = float(0)
         self.direction = p.Vector(0, 0, 0)
         self.color = p.Vector(1, 1, 1)
+
+    def __eq__(self, other):
+        return\
+            self.center == other.center and\
+            math.isclose(self.size, other.size, abs_tol=1e-4) and\
+            math.isclose(self.speed, other.speed, abs_tol=1e-4) and\
+            self.direction == other.direction and\
+            self.color == other.color
 
     def draw(self):
         pyglet.gl.glPushMatrix()
@@ -153,7 +161,10 @@ class Sphere(Entity):
 
         pyglet.gl.glColor3f(self.color.x, self.color.y, self.color.z)
 
-        raise NotImplementedError
+        quadric = pyglet.gl.gluNewQuadric()
+        pyglet.gl.gluQuadricDrawStyle(quadric, pyglet.gl.GLU_LINE)
+        pyglet.gl.gluQuadricNormals(quadric, pyglet.gl.GLU_SMOOTH)
+        pyglet.gl.gluSphere(quadric, self.size / 2, 10, 10)
 
         pyglet.gl.glPopMatrix()
 

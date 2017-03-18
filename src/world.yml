@@ -24,20 +24,18 @@ entities:
     orientation: !!python/object:physics.Vector {x: 0, y: 0, z: 0}
     size: 1.0
     speed: 1.7376769494941247
-  2: !!python/object:entities.Cube
+  2: !!python/object:entities.Sphere
     center: !!python/object:physics.Vector {x: 0, y: 0, z: 0}
     color: !!python/object:physics.Vector {x: 0.4, y: 0.8, z: 1.0}
-    direction: !!python/object:physics.Vector {x: 0.2652685818488419, y: 0.6998548120112011,
-      z: -0.6632011923908689}
-    orientation: !!python/object:physics.Vector {x: 0, y: 0, z: 0}
-    size: 1.0
-    speed: -1.7703239875345096
-  3: !!python/object:entities.Cube
+    direction: !!python/object:physics.Vector {x: 0.6322009953250265, y: -0.5990906209894592,
+      z: 0.4913372867516875}
+    size: 0.9639568016620654
+    speed: 0.9376657991333333
+  3: !!python/object:entities.Sphere
     center: !!python/object:physics.Vector {x: 0, y: 0, z: 0}
     color: !!python/object:physics.Vector {x: 0.0, y: 0.2, z: 0.6}
-    direction: !!python/object:physics.Vector {x: -0.20718882486491894, y: -0.8893462843671932,
-      z: 0.4075978132097393}
-    orientation: !!python/object:physics.Vector {x: 0, y: 0, z: 0}
-    size: 1.0
-    speed: 1.9226257786988086
+    direction: !!python/object:physics.Vector {x: 0.742135904350803, y: -0.5658849761015644,
+      z: -0.3591775233724232}
+    size: 1.1189912432439717
+    speed: -2.6079412174794214
 ids: 4
