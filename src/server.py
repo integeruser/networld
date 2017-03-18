@@ -155,11 +155,13 @@ snapshots = collections.deque()
 parser = argparse.ArgumentParser()
 parser.add_argument('port', type=int)
 parser.add_argument('-g', '--gui', action='store_true')
+parser.add_argument('-v', '--verbose', action='count', default=0)
 args = parser.parse_args()
 
 # load the logger
 logger = logging.getLogger(__name__)
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+levels = [logging.WARNING, logging.INFO, logging.DEBUG]
+logging.basicConfig(stream=sys.stdout, level=levels[min(args.verbose, len(levels) - 1)])
 
 # create and bind the server socket
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
