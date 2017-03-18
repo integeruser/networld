@@ -90,23 +90,25 @@ def snapshot():
 
 def receive():
     while True:
-        # read from socket
-        recv_data, addr = sock.recvfrom(2048)
-        if addr not in clients:
+        # read data from socket
+        recv_data, client = sock.recvfrom(2048)
+        if client not in clients:
+            # a client wants to connect?
             if recv_data == b'\xde\xad\xbe\xef':
-                logger.info('Client %s connected' % str(addr))
-                clients.append(addr)
+                logger.info('Client %s connected' % str(client))
+                clients.append(client)
             else:
-                logger.warning('Client %s attempted to reconnect' % str(addr))
+                logger.warning('Client %s attempted to reconnect' % str(client))
             continue
 
+        # decompress the received data
+        assert len(recv_data) <= 1440
         packet = bytearray(zlib.decompress(recv_data))
-        assert len(packet) <= 1440
 
         # add the received message to the process queue
-        cmsg = m.ClientMessage.frombytes(packet)
-        logger.debug('Received id=%d bytes=%d' % (cmsg.id, len(recv_data)))
-        to_process_deque.append((addr, cmsg))
+        c_msg = m.ClientMessage.frombytes(packet)
+        logger.debug('Received from %s msg id=%d len=%d' % (client, c_msg.id, len(recv_data)))
+        to_process_deque.append((client, c_msg))
 
 
 def send():

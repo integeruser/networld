@@ -20,35 +20,34 @@ import world as w
 
 
 def process():
-    to_process_buffer = []
-    while True:
-        while to_process_deque:
-            # extract a message from the process queue
-            smsg = to_process_deque.popleft()
-            # and push it in the process buffer
-            heapq.heappush(to_process_buffer, (smsg.id, smsg))
+    to_process_minheap = []
 
-        swap = []
+    while True:
+        # move messages from process queue to min-heap
+        while to_process_deque:
+            s_msg = to_process_deque.popleft()
+            priority = s_msg.id
+            heapq.heappush(to_process_minheap, (priority, s_msg))
+
         global last_smsg_received_id
         prev_last_smsg_received_id = last_smsg_received_id
-        while to_process_buffer:
-            # extract a message from the process buffer
-            smsg.id, smsg = heapq.heappop(to_process_buffer)
-
-            # check if it can be processed
-            if smsg.id <= last_smsg_received_id:
+        while to_process_minheap:
+            # extract the next message with smallest id
+            priority, s_msg = heapq.heappop(to_process_minheap)
+            if s_msg.id <= last_smsg_received_id:
+                # discard the message
                 continue
-            elif smsg.id == last_smsg_received_id + 1:
-                # process it
-                if smsg.op == m.ServerOperations.SNAPSHOT:
-                    world.update(smsg.world)
+            elif s_msg.id == last_smsg_received_id + 1:
+                # process the message
+                if s_msg.op == m.ServerOperations.SNAPSHOT:
+                    world.update(s_msg.world)
                 # increment the count of received messages
-                last_smsg_received_id = smsg.id
+                last_smsg_received_id = s_msg.id
             else:
-                swap.append((smsg.id, smsg))
-                swap.extend(to_process_buffer)
+                # reinsert the message in the min-heap and stop
+                logger.warning('Missing messages from server')
+                heapq.heappush(to_process_minheap, (priority, s_msg))
                 break
-        to_process_buffer = swap
 
         # acknowledge the arrival of the last valid message
         assert last_smsg_received_id >= prev_last_smsg_received_id
@@ -61,25 +60,28 @@ def process():
 
 
 def receive():
-    sock.settimeout(3)
+    sock.settimeout(1)
 
     while True:
-        # read from socket
+        # read data from socket
         try:
-            recv_data, addr = sock.recvfrom(2048)
+            recv_data, recv_addr = sock.recvfrom(2048)
         except socket.timeout:
-            logger.debug('Timeout!')
+            logger.info('Timeout!')
             os._exit(1)
 
-        if addr != server_addr:
+        if recv_addr != server_addr:
+            logger.warning('Received data from unknown %s' % str(recv_addr))
             continue
+
+        # decompress the received data
+        assert len(recv_data) <= 1440
         packet = bytearray(zlib.decompress(recv_data))
-        assert len(packet) <= 1440
 
         # add the received message to the process queue
-        smsg = m.ServerMessage.frombytes(packet)
-        logger.debug('Received id=%d op=%s bytes=%d' % (smsg.id, smsg.op, len(recv_data)))
-        to_process_deque.append(smsg)
+        s_msg = m.ServerMessage.frombytes(packet)
+        logger.debug('Received msg id=%d op=%s len=%d' % (s_msg.id, s_msg.op, len(recv_data)))
+        to_process_deque.append(s_msg)
 
 
 def send():
