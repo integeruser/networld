@@ -115,10 +115,10 @@ to_process_deque = collections.deque()
 to_send_deque = collections.deque()
 
 # init socket
-server_addr = (socket.gethostbyname(args.hostname), args.port)
+server_addr = (socket.gethostbyname(args.hostname), args.port+1)
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 # send any message to server to start a connection
-sock.sendto(b'\xde\xad\xbe\xef', server_addr)
+sock.sendto(b'\xde\xad\xbe\xef', (socket.gethostbyname(args.hostname), args.port))
 
 threading.Thread(target=process, daemon=True).start()
 threading.Thread(target=receive, daemon=args.gui).start()

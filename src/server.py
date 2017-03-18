@@ -21,6 +21,14 @@ import physics as p
 import world as w
 
 
+def accept():
+    while True:
+        _, client = sock_clients.recvfrom(2048)
+        if client not in clients:
+            clients.append(client)
+            logger.info('Client %s connected' % str(client))
+
+
 def simulate():
     # run simulation
     t = 0
@@ -49,28 +57,28 @@ def process():
     while True:
         while to_process_deque:
             # extract a message from the process queue
-            cmsg = to_process_deque.popleft()
+            client, cmsg = to_process_deque.popleft()
             # and push it in the process buffer
-            heapq.heappush(to_process_buffer, (cmsg.id, cmsg))
+            heapq.heappush(to_process_buffer, (client, cmsg.id, cmsg))
 
         swap = []
         global last_cmsg_received_id
         while to_process_buffer:
             # extract a message from the process buffer
-            cmsg_id, cmsg = heapq.heappop(to_process_buffer)
+            client, cmsg_id, cmsg = heapq.heappop(to_process_buffer)
 
             # check if it can be processed
-            if cmsg.id <= last_cmsg_received_id:
+            if cmsg.id <= last_cmsg_received_id[client]:
                 continue
-            elif cmsg.id == last_cmsg_received_id + 1:
+            elif cmsg.id == last_cmsg_received_id[client] + 1:
                 # process it
                 global serv_messages
                 global last_snapshot_rec
-                last_snapshot_rec = serv_messages[cmsg.last_smsg_received]
+                last_snapshot_rec[client] = serv_messages[client][cmsg.last_smsg_received]
                 # increment the count of received messages
-                last_cmsg_received_id = cmsg.id
+                last_cmsg_received_id[client] = cmsg.id
             else:
-                swap.append((cmsg.id, cmsg))
+                swap.append((client, cmsg.id, cmsg))
                 swap.extend(to_process_buffer)
                 break
         to_process_buffer = swap
@@ -82,7 +90,7 @@ def receive():
     while True:
         # read from socket
         recv_data, addr = sock.recvfrom(2048)
-        if addr != client_addr:
+        if addr not in clients:
             continue
         packet = bytearray(zlib.decompress(recv_data))
         assert len(packet) <= 1440
@@ -90,48 +98,50 @@ def receive():
         # add the received message to the process queue
         cmsg = m.ClientMessage.frombytes(packet)
         logger.debug('Received id=%d bytes=%d' % (cmsg.id, len(recv_data)))
-        to_process_deque.append(cmsg)
+        to_process_deque.append((addr, cmsg))
 
 
 def send():
-    smsg_ids = itertools.count()
+    smsg_ids = collections.defaultdict(itertools.count)
 
     while True:
         while to_send_deque:
             # extract a message from the send queue
-            smsg = to_send_deque.popleft()
-            smsg.id = next(smsg_ids)  # to refactor
+            client, smsg = to_send_deque.popleft()
+            smsg.id = next(smsg_ids[client])  # to refactor
             packet = m.ServerMessage.tobytes(smsg)
 
             # to refactor
             global serv_messages
-            serv_messages[smsg.id] = copy.deepcopy(world)
+            serv_messages[client][smsg.id] = copy.deepcopy(world)
 
             # write on socket
-            n = sock.sendto(zlib.compress(packet), client_addr)
-            logger.debug('Sent id=%d op=%s bytes=%d' % (smsg.id, smsg.op, n))
+            n = sock.sendto(zlib.compress(packet), client)
+            logger.debug('Sent client=%s id=%d op=%s bytes=%d' % (client, smsg.id, smsg.op, n))
         time.sleep(0.150)
 
 
 def snapshot():
     while True:
-        smsg = m.ServerMessage()
-        smsg.op = m.ServerOperations.SNAPSHOT
-        smsg.server_time = time.perf_counter()
-        smsg.frame_count = -1  # todo
-        smsg.world = w.World.diff(last_snapshot_rec, world)
-        smsg.world_len = len(smsg.world)
-        smsg.n_entities = len(world.entities)
-        to_send_deque.append(smsg)
-        time.sleep(0.300)
+        for client in clients:
+            smsg = m.ServerMessage()
+            smsg.op = m.ServerOperations.SNAPSHOT
+            smsg.server_time = time.perf_counter()
+            smsg.frame_count = -1  # todo
+            smsg.world = w.World.diff(last_snapshot_rec[client], world)
+            smsg.world_len = len(smsg.world)
+            smsg.n_entities = len(world.entities)
+            to_send_deque.append((client, smsg))
+            time.sleep(0.300)
 
 
 def noise():
     while True:
-        smsg = m.ServerMessage()
-        smsg.op = m.ServerOperations.NOP
-        to_send_deque.append(smsg)
-        time.sleep(0.200)
+        for client in clients:
+            smsg = m.ServerMessage()
+            smsg.op = m.ServerOperations.NOP
+            to_send_deque.append((client, smsg))
+            time.sleep(0.200)
 
 
 parser = argparse.ArgumentParser()
@@ -140,29 +150,35 @@ parser.add_argument('-g', '--gui', action='store_true')
 args = parser.parse_args()
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 # load world
 with open('world.yml') as f:
     world = yaml.load(f)
 
-last_cmsg_received_id = -1
+last_cmsg_received_id = collections.defaultdict(lambda: -1)
 
 to_process_deque = collections.deque()
 to_send_deque = collections.deque()
 
-serv_messages = {0: w.World()}
-last_snapshot_rec = serv_messages[0]
+serv_messages = collections.defaultdict(lambda: {0: w.World()})
+last_snapshot_rec = collections.defaultdict(lambda: w.World())
 
 snapshots = collections.deque()
 
-# init socket
+# init sockets
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock.bind(('127.0.0.1', args.port))
+sock.bind(('127.0.0.1', args.port+1))
 
+# todo swap sockets
+sock_clients = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+sock_clients.bind(('127.0.0.1', args.port))
+clients = []
+
+threading.Thread(target=accept, daemon=True).start()
 logger.info('Waiting for a client...')
-_, client_addr = sock.recvfrom(2048)
-logger.info('Client %s connected, starting...' % str(client_addr))
+while not clients:
+    time.sleep(0.5)
 
 threading.Thread(target=simulate, daemon=True).start()
 threading.Thread(target=process, daemon=True).start()
