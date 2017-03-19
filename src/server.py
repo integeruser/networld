@@ -23,7 +23,7 @@ import world as w
 
 def update():
     t = 0
-    dt = 0.010
+    dt = 1./conf['tickrate']
     acc = 0
     current_time = time.perf_counter()
     frame_count = 0
@@ -161,6 +161,10 @@ args = parser.parse_args()
 logger = logging.getLogger(__name__)
 levels = [logging.WARNING, logging.INFO, logging.DEBUG]
 logging.basicConfig(stream=sys.stdout, level=levels[min(args.verbose, len(levels) - 1)])
+
+# load the configuration
+with open('conf.yml') as f:
+    conf = yaml.load(f)
 
 # create and bind the server socket
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
