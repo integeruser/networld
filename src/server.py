@@ -84,7 +84,7 @@ def snapshot():
             smsg.world = w.World.diff(last_snapshot_rec[client], world)
             smsg.world_len = len(smsg.world)
             smsg.n_entities = len(world.entities)
-            to_send_deque.append((client, smsg))
+            to_send_deque[client].append(smsg)
             time.sleep(0.300)
 
 
@@ -115,19 +115,20 @@ def send():
     smsg_ids = collections.defaultdict(itertools.count)
 
     while True:
-        while to_send_deque:
-            # extract a message from the send queue
-            client, smsg = to_send_deque.popleft()
-            smsg.id = next(smsg_ids[client])  # to refactor
-            packet = m.ServerMessage.tobytes(smsg)
+        for client in clients:
+            while to_send_deque[client]:
+                # extract a message from the send queue
+                smsg = to_send_deque[client].popleft()
+                smsg.id = next(smsg_ids[client])  # to refactor
+                packet = m.ServerMessage.tobytes(smsg)
 
-            # to refactor
-            global serv_messages
-            serv_messages[client][smsg.id] = copy.deepcopy(world)
+                # to refactor
+                global serv_messages
+                serv_messages[client][smsg.id] = copy.deepcopy(world)
 
-            # write on socket
-            n = sock.sendto(zlib.compress(packet), client)
-            logger.debug('Sent client=%s id=%d op=%s bytes=%d' % (client, smsg.id, smsg.op, n))
+                # write on socket
+                n = sock.sendto(zlib.compress(packet), client)
+                logger.debug('Sent client=%s id=%d op=%s bytes=%d' % (client, smsg.id, smsg.op, n))
         time.sleep(0.150)
 
 
@@ -136,14 +137,14 @@ def noise():
         for client in clients:
             smsg = m.ServerMessage()
             smsg.op = m.ServerOperations.NOP
-            to_send_deque.append((client, smsg))
+            to_send_deque[client].append(smsg)
             time.sleep(0.200)
 
 
 last_cmsg_received_id = collections.defaultdict(lambda: -1)
 
 to_process_deque = collections.deque()
-to_send_deque = collections.deque()
+to_send_deque = collections.defaultdict(collections.deque)
 
 serv_messages = collections.defaultdict(lambda: {0: w.World()})
 last_snapshot_rec = collections.defaultdict(lambda: w.World())
