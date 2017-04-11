@@ -9,7 +9,6 @@ import zlib
 import networking as n
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 
 def pack(reliable, seq, ack, data):
@@ -149,6 +148,8 @@ class NetChannel:
 if __name__ == '__main__':
     import socket
     import threading
+
+    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
     def ack(netchannel):
         while True:
