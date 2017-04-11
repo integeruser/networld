@@ -14,6 +14,10 @@ class World:
     DIFF = 0x3
 
     @staticmethod
+    def dummy():
+        return World()
+
+    @staticmethod
     def diff(from_world, to_world):
         msg = bytearray()
         # update boundaries
