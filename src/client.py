@@ -56,11 +56,11 @@ def ack():
 
 
 # load the configuration
-with open('config.yml') as f:
+with open('../data/config.yml') as f:
     config = yaml.load(f)
 
 # load the world to simulate
-with open('world.yml') as f:
+with open('../data/world.yml') as f:
     world = yaml.load(f)
 
 to_process_minheap = []
