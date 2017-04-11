@@ -1,3 +1,4 @@
+import itertools
 from enum import Enum
 
 import entities as e
@@ -14,22 +15,19 @@ class ServerOperations(Enum):
 
 class ServerMessage():
     EOF = 0x08
+    id_count = itertools.count()
 
-    def __init__(self):
-        self.id = -1
-        self.last_cmsg_received = -1
-        self.op = None
+    def __init__(self, op):
+        self.id = next(ServerMessage.id_count)
+        self.op = op
 
     @staticmethod
     def frombytes(b):
-        smsg = ServerMessage()
+        smsg = ServerMessage(ServerOperations.NOP)
         smsg.id = n.r_int(b)
-        smsg.last_cmsg_received = n.r_int(b)
         smsg.op = ServerOperations(n.r_byte(b))
 
         if smsg.op == ServerOperations.SNAPSHOT:
-            smsg.server_time = n.r_float(b)
-            smsg.frame_count = n.r_int(b)
             smsg.world_len = n.r_int(b)
             smsg.world = n.r_blob(b, smsg.world_len)
             smsg.n_entities = n.r_int(b)
@@ -45,12 +43,9 @@ class ServerMessage():
     def tobytes(smsg):
         packet = bytearray()
         n.w_int(packet, smsg.id)
-        n.w_int(packet, smsg.last_cmsg_received)
         n.w_byte(packet, smsg.op.value)
 
         if smsg.op == ServerOperations.SNAPSHOT:
-            n.w_float(packet, smsg.server_time)
-            n.w_int(packet, smsg.frame_count)
             n.w_int(packet, smsg.world_len)
             n.w_blob(packet, smsg.world)
             n.w_int(packet, smsg.n_entities)
@@ -68,13 +63,13 @@ class ClientMessage():
 
     def __init__(self):
         self.id = -1
-        self.last_smsg_received = -1
+        self.ack = -1
 
     @staticmethod
     def frombytes(b):
         cmsg = ClientMessage()
         cmsg.id = n.r_int(b)
-        cmsg.last_smsg_received = n.r_int(b)
+        cmsg.ack = n.r_int(b)
         assert n.r_byte(b) == ClientMessage.EOF
         return cmsg
 
@@ -82,6 +77,6 @@ class ClientMessage():
     def tobytes(cmsg):
         packet = bytearray()
         n.w_int(packet, cmsg.id)
-        n.w_int(packet, cmsg.last_smsg_received)
+        n.w_int(packet, cmsg.ack)
         n.w_byte(packet, ClientMessage.EOF)
         return packet

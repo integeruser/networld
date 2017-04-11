@@ -1,3 +1,9 @@
 {
-  tickrate: 66       # simulation ticks per second
+  tickrate:       66, # simulation ticks per second
+
+  sv_updaterate:  01, # number of snapshots taken per second
+
+  cl_cmdrate:     03, # number of packets to send per second
+  cl_refreshrate: 60,
+  cl_updaterate:  20, # number of snapshots to send to any client per second
 }
