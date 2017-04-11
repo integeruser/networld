@@ -90,7 +90,7 @@ def noise():
 
 
 # load the configuration
-with open('conf.yml') as f:
+with open('config.yml') as f:
     config = yaml.load(f)
 
 # load the world to simulate
