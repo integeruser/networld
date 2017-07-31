@@ -9,11 +9,12 @@ import threading
 import time
 
 import pyglet
-import yaml
 
-import messages as m
+import messages as m2
+import messages_pb2 as m
 import netchannel as nc
 import world as w
+import yaml
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--debug', action='store_const', dest='loglevel', const=logging.DEBUG)
@@ -35,23 +36,23 @@ def process():
             else:
                 if sv_msg.id > last_id_proc:
                     # process the message
-                    if sv_msg.op == m.ServerOperations.SNAPSHOT:
+                    if sv_msg.op == m2.ServerOperations.SNAPSHOT:
                         world.update(sv_msg.world)
                         last_id_proc = sv_msg.id
         time.sleep(0.010)
 
 
-def receive(data):
-    sv_msg = m.ServerMessage.frombytes(data)
+def receive(message):
+    sv_msg = m2.ServerMessage.frombytes(bytearray(message.data))
     priority = sv_msg.id
     heapq.heappush(to_process_minheap, (priority, sv_msg))
 
 
 def ack():
     while True:
-        cl_msg = m.ClientMessage()
+        cl_msg = m2.ClientMessage()
         cl_msg.ack = last_id_proc
-        netchannel.transmit(m.ClientMessage.tobytes(cl_msg))
+        netchannel.transmit(m.Message(data=bytes(m2.ClientMessage.tobytes(cl_msg))))
         time.sleep(1. / config['cl_cmdrate'])
 
 

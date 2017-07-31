@@ -9,11 +9,11 @@ import sys
 import threading
 import time
 
-import yaml
-
-import messages as m
+import messages as m2
+import messages_pb2 as m
 import netchannel as nc
 import world as w
+import yaml
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--debug', action='store_const', dest='loglevel', const=logging.DEBUG)
@@ -63,14 +63,14 @@ def update():
         time.sleep(0.005)
 
 
-def receive(data):
-    cl_msg = m.ClientMessage.frombytes(data)
+def receive(message):
+    cl_msg = m2.ClientMessage.frombytes(bytearray(message.data))
     snapshots.receive(cl_msg.ack)
 
 
 def snapshot():
     while True:
-        sv_msg = m.ServerMessage(m.ServerOperations.SNAPSHOT)
+        sv_msg = m2.ServerMessage(m2.ServerOperations.SNAPSHOT)
         sv_msg.world = w.World.diff(snapshots.history[snapshots.last_ack_recv], world)
         sv_msg.world_len = len(sv_msg.world)
         sv_msg.n_entities = len(world.entities)
@@ -78,14 +78,14 @@ def snapshot():
 
         snapshots.add(sv_msg.id, world)
 
-        netchannel.transmit(m.ServerMessage.tobytes(sv_msg))
+        netchannel.transmit(m.Message(data=bytes(m2.ServerMessage.tobytes(sv_msg))))
         time.sleep(1. / config['sv_updaterate'])
 
 
 def noise():
     while True:
-        sv_msg = m.ServerMessage(m.ServerOperations.NOP)
-        netchannel.transmit(m.ServerMessage.tobytes(sv_msg))
+        sv_msg = m2.ServerMessage(m2.ServerOperations.NOP)
+        netchannel.transmit(m.Message(data=bytes(m2.ServerMessage.tobytes(sv_msg))))
         time.sleep(0.500)
 
 

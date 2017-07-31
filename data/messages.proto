@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+
+message Message {
+  bool reliable = 1;
+  bytes data = 2;
+}
+
+message Packet {
+  int32 seq = 1;
+  int32 ack = 2;
+  repeated Message messages = 3;
+}
