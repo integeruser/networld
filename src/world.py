@@ -98,6 +98,7 @@ class World:
             self._handle_boundaries_collision(entity)
 
     def update(self, msg):
+        msg = bytearray(msg)
         # update boundaries
         diff = n.r_blob(msg, n.r_byte(msg))
         self.boundaries.update(diff)

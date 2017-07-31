@@ -9,7 +9,6 @@ import sys
 import threading
 import time
 
-import messages as m2
 import messages_pb2 as m
 import netchannel as nc
 import world as w
@@ -24,71 +23,36 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(stream=sys.stdout, level=args.loglevel)
 
 
-class Snapshots:
-    def __init__(self):
-        self.history = {}
-        self.last_ack_recv = 0
-
-    def add(self, id, world):
-        self.history[id] = world
-
-    def receive(self, ack):
-        self.last_ack_recv = max(self.last_ack_recv, ack)
-        self.history = {
-            sv_msg_id: world
-            for sv_msg_id, world in self.history.items() if sv_msg_id >= self.last_ack_recv
-        }
-        logger.debug('Recv ack=%d history=%s' % (self.last_ack_recv, self.history))
-
-
-def update():
-    t = 0
-    dt = 1. / config['tickrate']
-    acc = 0
-    current_time = time.perf_counter()
-    frame_count = 0
-    while True:
-        new_time = time.perf_counter()
-        frame_time = new_time - current_time
-        if frame_time > 0.25:
-            frame_time = 0.25
-        current_time = new_time
-
-        acc += frame_time
-        while acc >= dt:
-            world.tick(dt)
-            t += dt
-            acc -= dt
-            frame_count += 1
-        time.sleep(0.01)
-
-
-def receive(message):
-    pass
+def process(message):
+    global last_processed_id, snapshots_history, last_snapshot_id
+    if message.id > last_processed_id:
+        if message.id in snapshots_history:
+            snapshots_history = {
+                id: world
+                for id, world in snapshots_history.items() if id >= last_snapshot_id
+            }
+            last_snapshot_id = message.id
+        last_processed_id = message.id
 
 
 def snapshot():
     while True:
-        sv_msg = m2.ServerMessage(m2.ServerOperations.SNAPSHOT)
-        sv_msg.world = w.World.diff(snapshots.history[snapshots.last_ack_recv], world)
-        sv_msg.world_len = len(sv_msg.world)
-        sv_msg.n_entities = len(world.entities)
-        logger.debug('Snapshot id=%d using id=%d' % (sv_msg.id, snapshots.last_ack_recv))
-
-        snapshots.add(sv_msg.id, world)
+        id = next(id_count)
+        snapshots_history[id] = world
+        logger.info('Snapshot id=%d using id=%d' % (id, last_snapshot_id))
 
         netchan.transmit(
             m.Message(
-                id=next(id_count),
+                id=id,
                 op=m.Message.SNAPSHOT,
-                data=bytes(m2.ServerMessage.tobytes(sv_msg))))
+                data=bytes(w.World.diff(snapshots_history[last_snapshot_id], world))))
         time.sleep(1. / config['sv_updaterate'])
 
 
 def noise():
     while True:
         netchan.transmit(m.Message(id=next(id_count), op=m.Message.NOOP))
-        time.sleep(0.50)
+        time.sleep(0.1)
 
 
 # load the configuration and the world to simulate
@@ -98,18 +62,37 @@ with open('../data/world.yml') as f:
     world = yaml.load(f)
 
 id_count = itertools.count(1)
+last_processed_id = last_snapshot_id = 0
 
-snapshots = Snapshots()
-snapshots.history[snapshots.last_ack_recv] = world
+snapshots_history = {last_snapshot_id: world}
 
 # set up a netchannel
 sv_addr = ('0.0.0.0', 31337)
 cl_addr = ('0.0.0.0', 31338)
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.bind(sv_addr)
-netchan = nc.NetChannel(sock, cl_addr, receive)
+netchan = nc.NetChannel(sock, cl_addr, process)
 
-# start the simulation
-threading.Thread(target=update, daemon=False).start()
 threading.Thread(target=snapshot, daemon=True).start()
 threading.Thread(target=noise, daemon=True).start()
+
+# start the simulation
+t = 0
+dt = 1. / config['tickrate']
+acc = 0
+current_time = time.perf_counter()
+frame_count = 0
+while True:
+    new_time = time.perf_counter()
+    frame_time = new_time - current_time
+    if frame_time > 0.25:
+        frame_time = 0.25
+    current_time = new_time
+
+    acc += frame_time
+    while acc >= dt:
+        world.tick(dt)
+        t += dt
+        acc -= dt
+        frame_count += 1
+    time.sleep(0.01)

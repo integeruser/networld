@@ -10,7 +10,6 @@ import time
 
 import pyglet
 
-import messages as m2
 import messages_pb2 as m
 import netchannel as nc
 import world as w
@@ -29,8 +28,7 @@ def process(message):
     global last_processed_id
     if message.id > last_processed_id:
         if message.op == m.Message.SNAPSHOT:
-            sv_msg = m2.ServerMessage.frombytes(bytearray(message.data))
-            world.update(sv_msg.world)
+            world.update(message.data)
         elif message.op == m.Message.NOOP:
             pass
         else:
@@ -40,7 +38,7 @@ def process(message):
 
 def ack():
     while True:
-        netchan.transmit(m.Message(id=next(id_count), ack=last_processed_id, data=b'noop'))
+        netchan.transmit(m.Message(id=next(id_count), ack=last_processed_id, data=b'ack'))
         time.sleep(1. / config['cl_cmdrate'])
 
 
