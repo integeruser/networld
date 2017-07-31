@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import collections
-import heapq
+import itertools
 import logging
 import socket
 import sys
@@ -25,56 +25,41 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(stream=sys.stdout, level=args.loglevel)
 
 
-def process():
-    global last_id_proc
-    while True:
-        while True:
-            try:
-                _, sv_msg = heapq.heappop(to_process_minheap)
-            except IndexError:
-                break
-            else:
-                if sv_msg.id > last_id_proc:
-                    # process the message
-                    if sv_msg.op == m2.ServerOperations.SNAPSHOT:
-                        world.update(sv_msg.world)
-                        last_id_proc = sv_msg.id
-        time.sleep(0.010)
-
-
-def receive(message):
-    sv_msg = m2.ServerMessage.frombytes(bytearray(message.data))
-    priority = sv_msg.id
-    heapq.heappush(to_process_minheap, (priority, sv_msg))
+def process(message):
+    global last_processed_id
+    if message.id > last_processed_id:
+        if message.op == m.Message.SNAPSHOT:
+            sv_msg = m2.ServerMessage.frombytes(bytearray(message.data))
+            world.update(sv_msg.world)
+        elif message.op == m.Message.NOOP:
+            pass
+        else:
+            raise NotImplementedError
+        last_processed_id = message.id
 
 
 def ack():
     while True:
-        cl_msg = m2.ClientMessage()
-        cl_msg.ack = last_id_proc
-        netchannel.transmit(m.Message(data=bytes(m2.ClientMessage.tobytes(cl_msg))))
+        netchan.transmit(m.Message(id=next(id_count), ack=last_processed_id, data=b'noop'))
         time.sleep(1. / config['cl_cmdrate'])
 
 
-# load the configuration
+# load the configuration and the world to simulate
 with open('../data/config.yml') as f:
     config = yaml.load(f)
-
-# load the world to simulate
 with open('../data/world.yml') as f:
     world = yaml.load(f)
 
-to_process_minheap = []
-last_id_proc = -1
+id_count = itertools.count(1)
+last_processed_id = 0
 
 # set up a netchannel
 sv_addr = ('0.0.0.0', 31337)
 cl_addr = ('0.0.0.0', 31338)
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.bind(cl_addr)
-netchannel = nc.NetChannel(sock, sv_addr, receive)
+netchan = nc.NetChannel(sock, sv_addr, process)
 
-threading.Thread(target=process, daemon=True).start()
 threading.Thread(target=ack, daemon=True).start()
 
 gui = True

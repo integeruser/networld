@@ -27,7 +27,7 @@ logging.basicConfig(stream=sys.stdout, level=args.loglevel)
 class Snapshots:
     def __init__(self):
         self.history = {}
-        self.last_ack_recv = -1
+        self.last_ack_recv = 0
 
     def add(self, id, world):
         self.history[id] = world
@@ -50,8 +50,8 @@ def update():
     while True:
         new_time = time.perf_counter()
         frame_time = new_time - current_time
-        if frame_time > 0.250:
-            frame_time = 0.250
+        if frame_time > 0.25:
+            frame_time = 0.25
         current_time = new_time
 
         acc += frame_time
@@ -60,12 +60,11 @@ def update():
             t += dt
             acc -= dt
             frame_count += 1
-        time.sleep(0.005)
+        time.sleep(0.01)
 
 
 def receive(message):
-    cl_msg = m2.ClientMessage.frombytes(bytearray(message.data))
-    snapshots.receive(cl_msg.ack)
+    pass
 
 
 def snapshot():
@@ -78,24 +77,27 @@ def snapshot():
 
         snapshots.add(sv_msg.id, world)
 
-        netchannel.transmit(m.Message(data=bytes(m2.ServerMessage.tobytes(sv_msg))))
+        netchan.transmit(
+            m.Message(
+                id=next(id_count),
+                op=m.Message.SNAPSHOT,
+                data=bytes(m2.ServerMessage.tobytes(sv_msg))))
         time.sleep(1. / config['sv_updaterate'])
 
 
 def noise():
     while True:
-        sv_msg = m2.ServerMessage(m2.ServerOperations.NOP)
-        netchannel.transmit(m.Message(data=bytes(m2.ServerMessage.tobytes(sv_msg))))
-        time.sleep(0.500)
+        netchan.transmit(m.Message(id=next(id_count), op=m.Message.NOOP))
+        time.sleep(0.50)
 
 
-# load the configuration
+# load the configuration and the world to simulate
 with open('../data/config.yml') as f:
     config = yaml.load(f)
-
-# load the world to simulate
 with open('../data/world.yml') as f:
     world = yaml.load(f)
+
+id_count = itertools.count(1)
 
 snapshots = Snapshots()
 snapshots.history[snapshots.last_ack_recv] = world
@@ -105,7 +107,7 @@ sv_addr = ('0.0.0.0', 31337)
 cl_addr = ('0.0.0.0', 31338)
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.bind(sv_addr)
-netchannel = nc.NetChannel(sock, cl_addr, receive)
+netchan = nc.NetChannel(sock, cl_addr, receive)
 
 # start the simulation
 threading.Thread(target=update, daemon=False).start()
