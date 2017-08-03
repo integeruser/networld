@@ -4,7 +4,6 @@ import logging
 import sys
 import threading
 import time
-import zlib
 
 import messages_pb2 as m
 
@@ -38,7 +37,7 @@ class NetChannel:
 
             recv_data, _ = self.sock.recvfrom(NetChannel.MAX_PACKET_LEN)
             packet = m.Packet()
-            packet.ParseFromString(zlib.decompress(recv_data))
+            packet.ParseFromString(recv_data)
 
             logger.debug('%s: recv seq=%d ack=%d messages=%d' %
                          (self.sock.getsockname(), packet.seq, packet.ack, len(packet.messages)))
@@ -68,7 +67,7 @@ class NetChannel:
             # send the packet
             packet = m.Packet(
                 seq=next(self.seq_count), ack=self.ack_to_send_back, messages=messages_to_send)
-            n = self.sock.sendto(zlib.compress(packet.SerializeToString()), self.cl_addr)
+            n = self.sock.sendto(packet.SerializeToString(), self.cl_addr)
             assert n <= NetChannel.MAX_PACKET_LEN
             logger.debug('%s: sent seq=%d ack=%d messages=%d' %
                          (self.sock.getsockname(), packet.seq, packet.ack, len(packet.messages)))
