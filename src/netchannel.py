@@ -101,12 +101,12 @@ if __name__ == '__main__':
     logger = logging.getLogger(__name__)
     logging.basicConfig(stream=sys.stdout, level=args.loglevel)
 
-    sv_addr = ('0.0.0.0', 31337)
     sv_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sv_addr = ('0.0.0.0', 31337)
     sv_sock.bind(sv_addr)
 
-    cl_addr = ('0.0.0.0', 31338)
     cl_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    cl_addr = ('0.0.0.0', 31338)
     cl_sock.bind(cl_addr)
 
     process_callback = lambda _: None
@@ -124,4 +124,4 @@ if __name__ == '__main__':
     for data in [b'a', b'b', b'c', b'd', b'e']:
         cl_netchan.transmit(m.Message(reliable=True, data=data))
         sv_netchan.transmit(m.Message(reliable=True, data=data))
-    time.sleep(2.0)
+    time.sleep(2.00)
