@@ -27,8 +27,8 @@ class NetChannel:
         self.unrel_messages_deque = collections.deque()
         self.rel_messages_to_send = list()
 
-        self.id_count = itertools.count(1)
-        self.max_id_recv = 0
+        self.msgseq_count = itertools.count(1)
+        self.max_msgseq_recv = 0
 
         threading.Thread(target=self._send, daemon=True).start()
         threading.Thread(target=self._recv, daemon=True).start()
@@ -46,7 +46,7 @@ class NetChannel:
             packet = m.Packet()
             packet.ParseFromString(recv_data)
             logger.debug(
-                f'{self.sock.getsockname()}: _recv packet seq={packet.seq} ack={packet.ack} messages={[message.id for message in packet.messages]}'
+                f'{self.sock.getsockname()}: _recv packet seq={packet.seq} ack={packet.ack} messages={[message.seq for message in packet.messages]}'
             )
 
             # update the info on the latest packet received
@@ -63,7 +63,7 @@ class NetChannel:
                 self.rel_messages_to_send = list()
                 self.acks_to_recv = set()
 
-            for message in sorted(packet.messages, key=lambda message: message.id):
+            for message in sorted(packet.messages, key=lambda message: message.seq):
                 if message.reliable:
                     # acknowledge the arrival of the reliable message
                     assert self.ack_to_send_back <= packet.seq
@@ -91,7 +91,7 @@ class NetChannel:
             # build a packet
             packet = m.Packet(seq=next(self.seq_count), ack=self.ack_to_send_back, messages=messages_to_send)
             logger.debug(
-                f'{self.sock.getsockname()}: _send packet seq={packet.seq} ack={packet.ack} messages={[message.id for message in packet.messages]}'
+                f'{self.sock.getsockname()}: _send packet seq={packet.seq} ack={packet.ack} messages={[message.seq for message in packet.messages]}'
             )
 
             # send the packet
@@ -103,24 +103,24 @@ class NetChannel:
                 self.acks_to_recv.add(packet.seq)
 
     def transmit(self, message):
-        # assign the message a unique id
-        assert message.id == 0
-        message.id = next(self.id_count)
+        # assign the message a unique seq number
+        assert message.seq == 0
+        message.seq = next(self.msgseq_count)
 
-        logger.debug(f'{self.sock.getsockname()}: transmit id={message.id} data={message.data}')
+        logger.debug(f'{self.sock.getsockname()}: transmit seq={message.seq} data={message.data}')
 
         # put the message in the appropriate deque
         if message.reliable: self.rel_messages_deque.append(message)
         else: self.unrel_messages_deque.append(message)
 
     def process(self, message):
-        logger.debug(f'{self.sock.getsockname()}: process message id={message.id} data={message.data}')
+        logger.debug(f'{self.sock.getsockname()}: process message seq={message.seq} data={message.data}')
 
         # update the info on the latest message received
-        if message.id <= self.max_id_recv:
-            logger.debug(f'{self.sock.getsockname()}: process message id={message.id} is late or duplicate')
+        if message.seq <= self.max_msgseq_recv:
+            logger.debug(f'{self.sock.getsockname()}: process message seq={message.seq} is late or duplicate')
             return
-        self.max_id_recv = message.id
+        self.max_msgseq_recv = message.seq
 
         self.process_callback(message)
 
@@ -158,12 +158,12 @@ if __name__ == '__main__':
     cl_data_to_recv = iter(sv_data_to_send)
 
     def sv_process_callback(message):
-        logger.info(f'sv: process callback id={message.id} data={message.data}')
+        logger.info(f'sv: process callback seq={message.seq} data={message.data}')
         if message.reliable:
             assert message.data == next(sv_data_to_recv)
 
     def cl_process_callback(message):
-        logger.info(f'cl: process callback id={message.id} data={message.data}')
+        logger.info(f'cl: process callback seq={message.seq} data={message.data}')
         if message.reliable:
             assert message.data == next(cl_data_to_recv)
 

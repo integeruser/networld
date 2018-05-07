@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='messages.proto',
   package='',
   syntax='proto3',
-  serialized_pb=_b('\n\x0emessages.proto\">\n\x06Packet\x12\x0b\n\x03seq\x18\x01 \x01(\x05\x12\x0b\n\x03\x61\x63k\x18\x02 \x01(\x05\x12\x1a\n\x08messages\x18\x03 \x03(\x0b\x32\x08.Message\"p\n\x07Message\x12\x19\n\x02op\x18\x02 \x01(\x0e\x32\r.Message.Type\x12\n\n\x02id\x18\x03 \x01(\x05\x12\x10\n\x08reliable\x18\x05 \x01(\x08\x12\x0c\n\x04\x64\x61ta\x18\x06 \x01(\x0c\"\x1e\n\x04Type\x12\x08\n\x04NOOP\x10\x00\x12\x0c\n\x08SNAPSHOT\x10\x01\x62\x06proto3')
+  serialized_pb=_b('\n\x0emessages.proto\">\n\x06Packet\x12\x0b\n\x03seq\x18\x01 \x01(\x05\x12\x0b\n\x03\x61\x63k\x18\x02 \x01(\x05\x12\x1a\n\x08messages\x18\x03 \x03(\x0b\x32\x08.Message\"\x8a\x01\n\x07Message\x12\x19\n\x02op\x18\x02 \x01(\x0e\x32\r.Message.Type\x12\n\n\x02id\x18\x03 \x01(\x05\x12\x0b\n\x03seq\x18\x04 \x01(\x05\x12\x0b\n\x03\x61\x63k\x18\x05 \x01(\x05\x12\x10\n\x08reliable\x18\x06 \x01(\x08\x12\x0c\n\x04\x64\x61ta\x18\x07 \x01(\x0c\"\x1e\n\x04Type\x12\x08\n\x04NOOP\x10\x00\x12\x0c\n\x08SNAPSHOT\x10\x01\x62\x06proto3')
 )
 
 
@@ -41,8 +41,8 @@ _MESSAGE_TYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=164,
-  serialized_end=194,
+  serialized_start=191,
+  serialized_end=221,
 )
 _sym_db.RegisterEnumDescriptor(_MESSAGE_TYPE)
 
@@ -114,15 +114,29 @@ _MESSAGE = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='reliable', full_name='Message.reliable', index=2,
-      number=5, type=8, cpp_type=7, label=1,
+      name='seq', full_name='Message.seq', index=2,
+      number=4, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='ack', full_name='Message.ack', index=3,
+      number=5, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='reliable', full_name='Message.reliable', index=4,
+      number=6, type=8, cpp_type=7, label=1,
       has_default_value=False, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='data', full_name='Message.data', index=3,
-      number=6, type=12, cpp_type=9, label=1,
+      name='data', full_name='Message.data', index=5,
+      number=7, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=_b(""),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -140,8 +154,8 @@ _MESSAGE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=82,
-  serialized_end=194,
+  serialized_start=83,
+  serialized_end=221,
 )
 
 _PACKET.fields_by_name['messages'].message_type = _MESSAGE
