@@ -9,10 +9,11 @@ import sys
 import threading
 import time
 
+import yaml
+
 import messages_pb2 as m
 import netchannel as nc
 import world as w
-import yaml
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--debug', action='store_const', dest='loglevel', const=logging.DEBUG)
@@ -24,15 +25,15 @@ logging.basicConfig(stream=sys.stdout, level=args.loglevel)
 
 
 def process(message):
+    cl_message = m.ClientMessage()
+    cl_message.ParseFromString(message.data)
+
     global last_processed_id, snapshots_history, last_snapshot_id
-    if message.id > last_processed_id:
-        if message.id in snapshots_history:
-            snapshots_history = {
-                id: world
-                for id, world in snapshots_history.items() if id >= last_snapshot_id
-            }
-            last_snapshot_id = message.id
-        last_processed_id = message.id
+    if cl_message.id > last_processed_id:
+        if cl_message.id in snapshots_history:
+            snapshots_history = {id: world for id, world in snapshots_history.items() if id >= last_snapshot_id}
+            last_snapshot_id = cl_message.id
+        last_processed_id = cl_message.id
 
 
 def snapshot():
@@ -41,17 +42,16 @@ def snapshot():
         snapshots_history[id] = world
         logger.info('Snapshot id=%d using id=%d' % (id, last_snapshot_id))
 
-        netchan.transmit(
-            m.Message(
-                id=id,
-                op=m.Message.SNAPSHOT,
-                data=bytes(w.World.diff(snapshots_history[last_snapshot_id], world))))
+        sv_message = m.ServerMessage(
+            id=id, op=m.ServerMessage.SNAPSHOT, data=bytes(w.World.diff(snapshots_history[last_snapshot_id], world)))
+        netchan.transmit(m.Message(data=sv_message.SerializeToString()))
         time.sleep(1. / config['sv_updaterate'])
 
 
 def noise():
     while True:
-        netchan.transmit(m.Message(id=next(id_count), op=m.Message.NOOP))
+        sv_message = m.ServerMessage(id=next(id_count), op=m.ServerMessage.NOOP)
+        netchan.transmit(m.Message(data=sv_message.SerializeToString()))
         time.sleep(0.1)
 
 

@@ -9,11 +9,11 @@ import threading
 import time
 
 import pyglet
+import yaml
 
 import messages_pb2 as m
 import netchannel as nc
 import world as w
-import yaml
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--debug', action='store_const', dest='loglevel', const=logging.DEBUG)
@@ -25,20 +25,24 @@ logging.basicConfig(stream=sys.stdout, level=args.loglevel)
 
 
 def process(message):
+    sv_message = m.ServerMessage()
+    sv_message.ParseFromString(message.data)
+
     global last_processed_id
-    if message.id > last_processed_id:
-        if message.op == m.Message.SNAPSHOT:
-            world.update(message.data)
-        elif message.op == m.Message.NOOP:
+    if sv_message.id > last_processed_id:
+        if sv_message.op == m.ServerMessage.SNAPSHOT:
+            world.update(sv_message.data)
+        elif sv_message.op == m.ServerMessage.NOOP:
             pass
         else:
             raise NotImplementedError
-        last_processed_id = message.id
+        last_processed_id = sv_message.id
 
 
 def ack():
     while True:
-        netchan.transmit(m.Message(id=next(id_count), ack=last_processed_id, data=b'ack'))
+        cl_message = m.ClientMessage(id=next(id_count), ack=last_processed_id, data=b'ack')
+        netchan.transmit(m.Message(data=cl_message.SerializeToString()))
         time.sleep(1. / config['cl_cmdrate'])
 
 
@@ -74,7 +78,7 @@ if gui:
 
     @window.event
     def on_resize(width, height):
-        pyglet.gl.glViewport(0, 0, width, height)
+        pyglet.gl.glViewport(0, 0, 2 * width, 2 * height)
         pyglet.gl.glMatrixMode(pyglet.gl.GL_PROJECTION)
         pyglet.gl.glLoadIdentity()
         pyglet.gl.gluPerspective(45, width / height, 0.1, 1000)
