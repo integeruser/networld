@@ -63,7 +63,7 @@ class NetChannel:
                 self.rel_messages_to_send = list()
                 self.acks_to_recv = set()
 
-            for message in packet.messages:
+            for message in sorted(packet.messages, key=lambda message: message.id):
                 if message.reliable:
                     # acknowledge the arrival of the reliable message
                     assert self.ack_to_send_back <= packet.seq

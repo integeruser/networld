@@ -1,0 +1,19 @@
+[[source]]
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+pyglet = "*"
+PyYAML = "*"
+protobuf = "*"
+flatbuffers = "*"
+coloredlogs = "*"
+dataclasses = "*"
+
+[dev-packages]
+pylint = "*"
+yapf = "*"
+
+[requires]
+python_version = "3.6"
