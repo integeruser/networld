@@ -9,6 +9,8 @@ import messages_pb2 as m
 
 logger = logging.getLogger(__name__)
 
+lock = threading.Lock()
+
 
 class NetChannel:
     MAX_PACKET_LEN = 2048
@@ -60,8 +62,9 @@ class NetChannel:
 
             if packet.ack in self.acks_to_recv:
                 # the last reliable messages sent arrived at destination
-                self.rel_messages_to_send = list()
-                self.acks_to_recv = set()
+                with lock:
+                    self.rel_messages_to_send = list()
+                    self.acks_to_recv = set()
 
             for message in sorted(packet.messages, key=lambda message: message.seq):
                 if message.reliable:
@@ -75,17 +78,19 @@ class NetChannel:
         while True:
             time.sleep(1. / SEND_RATE)
 
-            if not self.rel_messages_to_send:
-                # extract a batch of reliable messages to repeatedly send until acknowledged
-                self.rel_messages_to_send = [
-                    self.rel_messages_deque.popleft() for _ in range(len(self.rel_messages_deque))
-                ]
             # extract a batch of unreliable messages to send this time only
             unrel_messages_to_send = [
                 self.unrel_messages_deque.popleft() for _ in range(len(self.unrel_messages_deque))
             ]
 
-            messages_to_send = self.rel_messages_to_send + unrel_messages_to_send
+            with lock:
+                if not self.rel_messages_to_send:
+                    # extract a batch of reliable messages to repeatedly send until acknowledged
+                    self.rel_messages_to_send = [
+                        self.rel_messages_deque.popleft() for _ in range(len(self.rel_messages_deque))
+                    ]
+
+                messages_to_send = self.rel_messages_to_send + unrel_messages_to_send
             if not messages_to_send: continue
 
             # build a packet
