@@ -3,6 +3,7 @@ import argparse
 import collections
 import copy
 import itertools
+import json
 import logging
 import socket
 import sys
@@ -58,6 +59,7 @@ def noise():
 # load the configuration and the world to simulate
 with open('../data/config.yml') as f:
     config = yaml.load(f)
+    logger.info(json.dumps(config, indent=4))
 with open('../data/world.yml') as f:
     world = yaml.load(f)
 
