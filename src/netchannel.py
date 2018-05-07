@@ -27,6 +27,9 @@ class NetChannel:
         self.unrel_messages_deque = collections.deque()
         self.rel_messages_to_send = []
 
+        self.id_count = itertools.count(1)
+        self.last_id_recv = 0
+
         threading.Thread(target=self._send, daemon=True).start()
         threading.Thread(target=self._recv, daemon=True).start()
 
@@ -75,6 +78,11 @@ class NetChannel:
             self.acks_to_recv.add(packet.seq)
 
     def transmit(self, message):
+        # assign the message a unique id
+        assert message.id == 0
+        message.id = next(self.id_count)
+
+        # put the message in the appropriate deque
         if message.reliable: self.rel_messages_deque.append(message)
         else: self.unrel_messages_deque.append(message)
 
@@ -87,6 +95,10 @@ class NetChannel:
         # process the messages
         for message in packet.messages:
             if message.reliable: self.ack_to_send_back = packet.seq
+
+            if message.id <= self.last_id_recv: return
+            self.last_id_recv = message.id
+
             self.process_callback(message)
 
 
