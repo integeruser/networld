@@ -15,7 +15,6 @@ message Message {
   Type op = 2;
 
   int32 id = 3;
-  int32 ack = 4;
   bool reliable = 5;
   bytes data = 6;
 }
