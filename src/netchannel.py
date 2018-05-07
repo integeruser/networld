@@ -104,6 +104,7 @@ class NetChannel:
 
 if __name__ == '__main__':
     import argparse
+    import random
     import socket
 
     parser = argparse.ArgumentParser()
@@ -121,9 +122,26 @@ if __name__ == '__main__':
     cl_addr = ('0.0.0.0', 31338)
     cl_sock.bind(cl_addr)
 
-    process_callback = lambda _: None
-    sv_netchan = NetChannel(sv_sock, cl_addr, process_callback)
-    cl_netchan = NetChannel(cl_sock, sv_addr, process_callback)
+    num_reliable_messages = 20
+    sv_data_to_send = [
+        random.randint(0, 0xffffffff).to_bytes(length=4, byteorder='little') for _ in range(num_reliable_messages)
+    ]
+    cl_data_to_send = [
+        random.randint(0, 0xffffffff).to_bytes(length=4, byteorder='little') for _ in range(num_reliable_messages)
+    ]
+    sv_data_to_recv = iter(cl_data_to_send)
+    cl_data_to_recv = iter(sv_data_to_send)
+
+    def sv_process_callback(message):
+        if message.reliable:
+            assert message.data == next(sv_data_to_recv)
+
+    def cl_process_callback(message):
+        if message.reliable:
+            assert message.data == next(cl_data_to_recv)
+
+    sv_netchan = NetChannel(sv_sock, cl_addr, sv_process_callback)
+    cl_netchan = NetChannel(cl_sock, sv_addr, cl_process_callback)
 
     def noop(netchan):
         while True:
@@ -133,7 +151,8 @@ if __name__ == '__main__':
     threading.Thread(target=noop, daemon=True, args=(sv_netchan, )).start()
     threading.Thread(target=noop, daemon=True, args=(cl_netchan, )).start()
 
-    for data in [b'a', b'b', b'c', b'd', b'e']:
-        cl_netchan.transmit(m.Message(reliable=True, data=data))
-        sv_netchan.transmit(m.Message(reliable=True, data=data))
+    for i in range(num_reliable_messages):
+        sv_netchan.transmit(m.Message(reliable=True, data=sv_data_to_send[i]))
+        cl_netchan.transmit(m.Message(reliable=True, data=cl_data_to_send[i]))
+        time.sleep(0.15)
     time.sleep(2.00)
