@@ -25,7 +25,7 @@ class NetChannel:
 
         self.rel_messages_deque = collections.deque()
         self.unrel_messages_deque = collections.deque()
-        self.rel_messages_to_send = []
+        self.rel_messages_to_send = list()
 
         self.id_count = itertools.count(1)
         self.last_id_recv = 0
@@ -42,11 +42,12 @@ class NetChannel:
             packet = m.Packet()
             packet.ParseFromString(recv_data)
 
-            logger.debug('%s: recv seq=%d ack=%d messages=%d' %
-                         (self.sock.getsockname(), packet.seq, packet.ack, len(packet.messages)))
-            if packet.seq <= self.last_seq_recv: return
-
+            logger.debug('%s: recv seq=%d ack=%d messages=%d' % (self.sock.getsockname(), packet.seq, packet.ack,
+                                                                 len(packet.messages)))
+            assert packet.seq != self.last_seq_recv
+            if packet.seq < self.last_seq_recv: return
             self.last_seq_recv = packet.seq
+
             self.process(packet)
 
     def _send(self):
@@ -68,12 +69,11 @@ class NetChannel:
             if not messages_to_send: continue
 
             # send the packet
-            packet = m.Packet(
-                seq=next(self.seq_count), ack=self.ack_to_send_back, messages=messages_to_send)
+            packet = m.Packet(seq=next(self.seq_count), ack=self.ack_to_send_back, messages=messages_to_send)
             n = self.sock.sendto(packet.SerializeToString(), self.cl_addr)
             assert n <= NetChannel.MAX_PACKET_LEN
-            logger.debug('%s: sent seq=%d ack=%d messages=%d' %
-                         (self.sock.getsockname(), packet.seq, packet.ack, len(packet.messages)))
+            logger.debug('%s: sent seq=%d ack=%d messages=%d' % (self.sock.getsockname(), packet.seq, packet.ack,
+                                                                 len(packet.messages)))
 
             self.acks_to_recv.add(packet.seq)
 
