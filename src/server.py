@@ -23,36 +23,47 @@ args = parser.parse_args()
 logger = logging.getLogger(__name__)
 logging.basicConfig(stream=sys.stdout, level=args.loglevel or logging.INFO)
 
+lock = threading.Lock()
+
 
 def process(message):
     cl_message = m.ClientMessage()
     cl_message.ParseFromString(message.data)
 
-    global snapshots_history, last_snapshot_id
-    if cl_message.id in snapshots_history:
-        snapshots_history = {id: world for id, world in snapshots_history.items() if id >= last_snapshot_id}
-        last_snapshot_id = cl_message.id
+    global last_snapshot_ack
+    with lock:
+        # update most recent snapshot acknowledged
+        last_snapshot_ack = max(filter(lambda seq: seq < message.ack, snapshots_history.keys()))
 
 
 def snapshot():
     while True:
         time.sleep(1. / config['sv_updaterate'])
 
-        id = next(id_count)
-        snapshots_history[id] = world
-        logger.info('Snapshot id=%d using id=%d' % (id, last_snapshot_id))
+        global snapshots_history
+        with lock:
+            # keep only the most recent snapshots
+            snapshots_history = {seq: world for seq, world in snapshots_history.items() if seq >= last_snapshot_ack}
 
-        sv_message = m.ServerMessage(
-            id=id, op=m.ServerMessage.SNAPSHOT, data=bytes(w.World.diff(snapshots_history[last_snapshot_id], world)))
-        netchan.transmit(m.Message(data=sv_message.SerializeToString()))
+            # create the snapshot using the last acknowledged state
+            snapshot = bytes(w.World.diff(snapshots_history[last_snapshot_ack], world))
+
+        # build and transmit the message
+        sv_message = m.ServerMessage(op=m.ServerMessage.SNAPSHOT, data=snapshot)
+        message_seq = netchan.transmit(m.Message(reliable=False, data=sv_message.SerializeToString()))
+
+        logger.info(f'snapshot id={message_seq} using id={last_snapshot_ack}')
+
+        # keep the snapshot in the history
+        snapshots_history[message_seq] = world
 
 
 def noise():
     while True:
         time.sleep(0.20)
 
-        sv_message = m.ServerMessage(op=m.ServerMessage.NOOP)
-        netchan.transmit(m.Message(data=sv_message.SerializeToString()))
+        sv_message = m.ServerMessage(op=m.ServerMessage.NOOP, data=b'noop')
+        netchan.transmit(m.Message(reliable=False, data=sv_message.SerializeToString()))
 
 
 # load the configuration and the world to simulate
@@ -62,10 +73,9 @@ with open('../data/config.yml') as f:
 with open('../data/world.yml') as f:
     world = yaml.load(f)
 
-id_count = itertools.count(1)
-last_snapshot_id = 0
+last_snapshot_ack = 0
 
-snapshots_history = {last_snapshot_id: world}
+snapshots_history = {last_snapshot_ack: world}
 
 # set up a netchannel
 sv_addr = ('0.0.0.0', 31337)

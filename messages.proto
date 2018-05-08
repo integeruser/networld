@@ -21,13 +21,9 @@ message ServerMessage {
     SNAPSHOT = 1;
   }
   Type op = 2;
-
-  int32 id = 3;
-  bytes data = 4;
+  bytes data = 3;
 }
 
 message ClientMessage {
-  int32 id = 1;
-  int32 ack = 2;
-  bytes data = 3;
+  bytes data = 1;
 }

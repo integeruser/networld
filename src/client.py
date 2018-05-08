@@ -28,23 +28,21 @@ def process(message):
     sv_message = m.ServerMessage()
     sv_message.ParseFromString(message.data)
 
-    global last_processed_id
-    if sv_message.id > last_processed_id:
-        if sv_message.op == m.ServerMessage.SNAPSHOT:
-            world.update(sv_message.data)
-        elif sv_message.op == m.ServerMessage.NOOP:
-            pass
-        else:
-            raise NotImplementedError
-        last_processed_id = sv_message.id
+    if sv_message.op == m.ServerMessage.NOOP:
+        pass
+    elif sv_message.op == m.ServerMessage.SNAPSHOT:
+        world.update(sv_message.data)
+        max_snapshotseq_recv = message.seq
+    else:
+        raise NotImplementedError
 
 
 def ack():
     while True:
         time.sleep(1. / config['cl_cmdrate'])
 
-        cl_message = m.ClientMessage(id=next(id_count), data=b'ack')
-        netchan.transmit(m.Message(data=cl_message.SerializeToString()))
+        cl_message = m.ClientMessage(data=b'ack')
+        netchan.transmit(m.Message(reliable=False, data=cl_message.SerializeToString()))
 
 
 # load the configuration and the world to simulate
@@ -53,9 +51,6 @@ with open('../data/config.yml') as f:
     logger.info(json.dumps(config, indent=4))
 with open('../data/world.yml') as f:
     world = yaml.load(f)
-
-id_count = itertools.count(1)
-last_processed_id = 0
 
 # set up a netchannel
 sv_addr = ('0.0.0.0', 31337)
