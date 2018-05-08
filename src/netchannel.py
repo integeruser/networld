@@ -15,10 +15,12 @@ lock = threading.Lock()
 class NetChannel:
     MAX_PACKET_LEN = 2048
 
-    def __init__(self, sock, cl_addr, process_callback):
+    def __init__(self, sock, cl_addr, process_callback, recv_rate=20, send_rate=20):
         self.sock = sock
         self.cl_addr = cl_addr
         self.process_callback = process_callback
+        self.recv_rate = recv_rate
+        self.send_rate = send_rate
 
         self.seq_count = itertools.count(1)
         self.max_seq_recv = 0
@@ -36,9 +38,8 @@ class NetChannel:
         threading.Thread(target=self._recv, daemon=True).start()
 
     def _recv(self):
-        RECV_RATE = 20
         while True:
-            time.sleep(1. / RECV_RATE)
+            time.sleep(1. / self.recv_rate)
 
             # read data from the socket
             recv_data, _ = self.sock.recvfrom(NetChannel.MAX_PACKET_LEN)
@@ -74,9 +75,8 @@ class NetChannel:
                 self.process(message)
 
     def _send(self):
-        SEND_RATE = 20
         while True:
-            time.sleep(1. / SEND_RATE)
+            time.sleep(1. / self.send_rate)
 
             # extract a batch of unreliable messages to send this time only
             unrel_messages_to_send = [
