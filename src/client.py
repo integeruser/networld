@@ -18,7 +18,10 @@ import world as w
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--debug', action='store_const', dest='loglevel', const=logging.DEBUG)
+parser.add_argument('--no-gui', action='store_true')
 args = parser.parse_args()
+
+use_gui = not args.no_gui
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(stream=sys.stdout, level=args.loglevel or logging.INFO)
@@ -59,10 +62,9 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.bind(cl_addr)
 netchan = nc.NetChannel(sock, sv_addr, process)
 
-threading.Thread(target=ack, daemon=True).start()
+threading.Thread(target=ack, daemon=use_gui).start()
 
-gui = True
-if gui:
+if use_gui:
     window = pyglet.window.Window()
 
     @window.event
