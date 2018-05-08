@@ -54,8 +54,9 @@ def snapshot():
 
         logger.info(f'snapshot id={message_seq} using id={last_snapshot_ack}')
 
+        with lock:
         # keep the snapshot in the history
-        snapshots_history[message_seq] = world
+            snapshots_history[message_seq] = copy.deepcopy(world)
 
 
 def noise():
