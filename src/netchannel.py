@@ -55,7 +55,7 @@ class NetChannel:
             # update the info on the latest packet received
             if packet.seq < self.max_seq_recv:
                 logger.debug(f'{self.sock.getsockname()}: _recv packet seq={packet.seq} is late')
-                return
+                continue
             if packet.seq == self.max_seq_recv:
                 # two packets cannot have the same seq number
                 raise AssertionError
