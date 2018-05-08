@@ -22,17 +22,16 @@ class NetChannel:
         self.recv_rate = recv_rate
         self.send_rate = send_rate
 
-        self.seq_count = itertools.count(1)
-        self.max_seq_recv = -1
+        self.pktseq_count = itertools.count(1)
+        self.max_pktseq_recv = -1
         self.ack_to_send_back = -1
         self.min_ack_to_recv = -1
 
+        self.msgseq_count = itertools.count(1)
+        self.max_msgseq_recv = -1
         self.rel_messages_deque = collections.deque()
         self.unrel_messages_deque = collections.deque()
         self.rel_messages_to_send = list()
-
-        self.msgseq_count = itertools.count(1)
-        self.max_msgseq_recv = -1
 
         threading.Thread(target=self._send, daemon=True).start()
         threading.Thread(target=self._recv, daemon=True).start()
@@ -52,14 +51,14 @@ class NetChannel:
                 f'{self.sock.getsockname()}: _recv packet seq={packet.seq} ack={packet.ack} messages={[message.seq for message in packet.messages]}'
             )
 
-            # update the info on the latest packet received
-            if packet.seq < self.max_seq_recv:
+            # check the packet
+            if packet.seq < self.max_pktseq_recv:
                 logger.debug(f'{self.sock.getsockname()}: _recv packet seq={packet.seq} is late')
                 continue
-            if packet.seq == self.max_seq_recv:
+            if packet.seq == self.max_pktseq_recv:
                 # two packets cannot have the same seq number
                 raise AssertionError
-            self.max_seq_recv = packet.seq
+            self.max_pktseq_recv = packet.seq
 
             if packet.ack >= self.min_ack_to_recv:
                 # the last reliable messages sent arrived at destination
@@ -67,6 +66,7 @@ class NetChannel:
                     self.rel_messages_to_send = list()
                     self.min_ack_to_recv = -1
 
+            # process the messages
             for message in sorted(packet.messages, key=lambda message: message.seq):
                 if message.reliable:
                     # acknowledge the arrival of the reliable message
@@ -78,23 +78,24 @@ class NetChannel:
         while True:
             time.sleep(1. / self.send_rate)
 
-            # extract a batch of unreliable messages to send this time only
+            # extract a batch of unreliable messages to send with this packet only
             unrel_messages_to_send = [
                 self.unrel_messages_deque.popleft() for _ in range(len(self.unrel_messages_deque))
             ]
 
             with lock:
                 if not self.rel_messages_to_send:
-                    # extract a batch of reliable messages to repeatedly send until acknowledged
+                    # extract a batch of reliable messages to send repeatedly until acknowledged
                     self.rel_messages_to_send = [
                         self.rel_messages_deque.popleft() for _ in range(len(self.rel_messages_deque))
                     ]
 
                 messages_to_send = self.rel_messages_to_send + unrel_messages_to_send
-            if not messages_to_send: continue
+            if not messages_to_send:
+                continue
 
-            # build a packet
-            packet = m.Packet(seq=next(self.seq_count), ack=self.ack_to_send_back, messages=messages_to_send)
+            # build the packet
+            packet = m.Packet(seq=next(self.pktseq_count), ack=self.ack_to_send_back, messages=messages_to_send)
             logger.debug(
                 f'{self.sock.getsockname()}: _send packet seq={packet.seq} ack={packet.ack} messages={[message.seq for message in packet.messages]}'
             )
@@ -103,7 +104,7 @@ class NetChannel:
             n = self.sock.sendto(packet.SerializeToString(), self.cl_addr)
             assert n <= NetChannel.MAX_PACKET_LEN
 
-            # add the packet seq to the list of acks to receive if the packet contains reliable messages
+            # update the ack number to receive if the packet sent contains reliable messages
             if self.rel_messages_to_send:
                 self.min_ack_to_recv = min(self.min_ack_to_recv, packet.seq)
 
@@ -112,16 +113,21 @@ class NetChannel:
         assert message.seq == 0
         message.seq = next(self.msgseq_count)
 
-        logger.debug(f'{self.sock.getsockname()}: transmit seq={message.seq} data={message.data}')
+        logger.debug(
+            f'{self.sock.getsockname()}: transmit seq={message.seq} reliable={message.reliable} data={message.data}')
 
-        # put the message in the appropriate deque
-        if message.reliable: self.rel_messages_deque.append(message)
-        else: self.unrel_messages_deque.append(message)
+        # put the message in the appropriate deque for later sending
+        if message.reliable:
+            self.rel_messages_deque.append(message)
+        else:
+            self.unrel_messages_deque.append(message)
 
     def process(self, message):
-        logger.debug(f'{self.sock.getsockname()}: process message seq={message.seq} data={message.data}')
+        logger.debug(
+            f'{self.sock.getsockname()}: process message seq={message.seq} reliable={message.reliable} data={message.data}'
+        )
 
-        # update the info on the latest message received
+        # check the message
         if message.seq <= self.max_msgseq_recv:
             logger.debug(f'{self.sock.getsockname()}: process message seq={message.seq} is late or duplicate')
             return
@@ -163,12 +169,12 @@ if __name__ == '__main__':
     cl_data_to_recv = iter(sv_data_to_send)
 
     def sv_process_callback(message):
-        logger.info(f'sv: process callback seq={message.seq} data={message.data}')
+        logger.info(f'sv: process callback seq={message.seq} reliable={message.reliable} data={message.data}')
         if message.reliable:
             assert message.data == next(sv_data_to_recv)
 
     def cl_process_callback(message):
-        logger.info(f'cl: process callback seq={message.seq} data={message.data}')
+        logger.info(f'cl: process callback seq={message.seq} reliable={message.reliable} data={message.data}')
         if message.reliable:
             assert message.data == next(cl_data_to_recv)
 
