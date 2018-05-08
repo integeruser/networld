@@ -154,6 +154,9 @@ class Sphere(Entity):
             self.direction == other.direction and\
             self.color == other.color
 
+    def __str__(self):
+        return 'Sphere[center=%s, size=%.02f]' % (self.center, self.size)
+
     def draw(self):
         pyglet.gl.glPushMatrix()
 

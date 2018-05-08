@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 import argparse
-import collections
 import copy
-import itertools
 import json
 import logging
 import socket
@@ -55,7 +53,7 @@ def snapshot():
         logger.info(f'snapshot id={message_seq} using id={last_snapshot_ack}')
 
         with lock:
-        # keep the snapshot in the history
+            # keep the snapshot in the history
             snapshots_history[message_seq] = copy.deepcopy(world)
 
 

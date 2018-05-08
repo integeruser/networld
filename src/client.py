@@ -31,11 +31,12 @@ def process(message):
     sv_message = m.ServerMessage()
     sv_message.ParseFromString(message.data)
 
+    logger.info(f'process seq={message.seq} op={m.ServerMessage.Type.Name(sv_message.op)}')
+
     if sv_message.op == m.ServerMessage.NOOP:
         pass
     elif sv_message.op == m.ServerMessage.SNAPSHOT:
         world.update(sv_message.data)
-        max_snapshotseq_recv = message.seq
     else:
         raise NotImplementedError
 
