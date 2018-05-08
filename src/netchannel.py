@@ -23,16 +23,16 @@ class NetChannel:
         self.send_rate = send_rate
 
         self.seq_count = itertools.count(1)
-        self.max_seq_recv = 0
-        self.ack_to_send_back = 0
-        self.acks_to_recv = set()
+        self.max_seq_recv = -1
+        self.ack_to_send_back = -1
+        self.min_ack_to_recv = -1
 
         self.rel_messages_deque = collections.deque()
         self.unrel_messages_deque = collections.deque()
         self.rel_messages_to_send = list()
 
         self.msgseq_count = itertools.count(1)
-        self.max_msgseq_recv = 0
+        self.max_msgseq_recv = -1
 
         threading.Thread(target=self._send, daemon=True).start()
         threading.Thread(target=self._recv, daemon=True).start()
@@ -61,11 +61,11 @@ class NetChannel:
                 raise AssertionError
             self.max_seq_recv = packet.seq
 
-            if packet.ack in self.acks_to_recv:
+            if packet.ack >= self.min_ack_to_recv:
                 # the last reliable messages sent arrived at destination
                 with lock:
                     self.rel_messages_to_send = list()
-                    self.acks_to_recv = set()
+                    self.min_ack_to_recv = -1
 
             for message in sorted(packet.messages, key=lambda message: message.seq):
                 if message.reliable:
@@ -105,7 +105,7 @@ class NetChannel:
 
             # add the packet seq to the list of acks to receive if the packet contains reliable messages
             if self.rel_messages_to_send:
-                self.acks_to_recv.add(packet.seq)
+                self.min_ack_to_recv = min(self.min_ack_to_recv, packet.seq)
 
     def transmit(self, message):
         # assign the message a unique seq number
