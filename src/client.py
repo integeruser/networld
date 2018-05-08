@@ -2,6 +2,7 @@
 import argparse
 import collections
 import itertools
+import json
 import logging
 import socket
 import sys
@@ -17,11 +18,10 @@ import world as w
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--debug', action='store_const', dest='loglevel', const=logging.DEBUG)
-parser.add_argument('-v', '--verbose', action='store_const', dest='loglevel', const=logging.INFO)
 args = parser.parse_args()
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(stream=sys.stdout, level=args.loglevel)
+logging.basicConfig(stream=sys.stdout, level=args.loglevel or logging.INFO)
 
 
 def process(message):
@@ -41,14 +41,16 @@ def process(message):
 
 def ack():
     while True:
-        cl_message = m.ClientMessage(id=next(id_count), ack=last_processed_id, data=b'ack')
-        netchan.transmit(m.Message(data=cl_message.SerializeToString()))
         time.sleep(1. / config['cl_cmdrate'])
+
+        cl_message = m.ClientMessage(id=next(id_count), data=b'ack')
+        netchan.transmit(m.Message(data=cl_message.SerializeToString()))
 
 
 # load the configuration and the world to simulate
 with open('../data/config.yml') as f:
     config = yaml.load(f)
+    logger.info(json.dumps(config, indent=4))
 with open('../data/world.yml') as f:
     world = yaml.load(f)
 

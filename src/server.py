@@ -18,27 +18,26 @@ import world as w
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--debug', action='store_const', dest='loglevel', const=logging.DEBUG)
-parser.add_argument('-v', '--verbose', action='store_const', dest='loglevel', const=logging.INFO)
 args = parser.parse_args()
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(stream=sys.stdout, level=args.loglevel)
+logging.basicConfig(stream=sys.stdout, level=args.loglevel or logging.INFO)
 
 
 def process(message):
     cl_message = m.ClientMessage()
     cl_message.ParseFromString(message.data)
 
-    global last_processed_id, snapshots_history, last_snapshot_id
-    if cl_message.id > last_processed_id:
-        if cl_message.id in snapshots_history:
-            snapshots_history = {id: world for id, world in snapshots_history.items() if id >= last_snapshot_id}
-            last_snapshot_id = cl_message.id
-        last_processed_id = cl_message.id
+    global snapshots_history, last_snapshot_id
+    if cl_message.id in snapshots_history:
+        snapshots_history = {id: world for id, world in snapshots_history.items() if id >= last_snapshot_id}
+        last_snapshot_id = cl_message.id
 
 
 def snapshot():
     while True:
+        time.sleep(1. / config['sv_updaterate'])
+
         id = next(id_count)
         snapshots_history[id] = world
         logger.info('Snapshot id=%d using id=%d' % (id, last_snapshot_id))
@@ -46,14 +45,14 @@ def snapshot():
         sv_message = m.ServerMessage(
             id=id, op=m.ServerMessage.SNAPSHOT, data=bytes(w.World.diff(snapshots_history[last_snapshot_id], world)))
         netchan.transmit(m.Message(data=sv_message.SerializeToString()))
-        time.sleep(1. / config['sv_updaterate'])
 
 
 def noise():
     while True:
-        sv_message = m.ServerMessage(id=next(id_count), op=m.ServerMessage.NOOP)
+        time.sleep(0.20)
+
+        sv_message = m.ServerMessage(op=m.ServerMessage.NOOP)
         netchan.transmit(m.Message(data=sv_message.SerializeToString()))
-        time.sleep(0.1)
 
 
 # load the configuration and the world to simulate
@@ -64,7 +63,7 @@ with open('../data/world.yml') as f:
     world = yaml.load(f)
 
 id_count = itertools.count(1)
-last_processed_id = last_snapshot_id = 0
+last_snapshot_id = 0
 
 snapshots_history = {last_snapshot_id: world}
 
