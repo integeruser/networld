@@ -29,9 +29,9 @@ message ServerMessage {
 message ClientMessage {
   message Command {
     enum Type {
-      DELETE_RANDOM_ENTITY = 0;
-      SPAWN_RANDOM_ENTITY = 1;
-      SIM_PAUSE = 2;
+      SIM_DELETE_RANDOM_ENTITY = 0;
+      SIM_SPAWN_RANDOM_ENTITY = 1;
+      SIM_TOGGLE_PAUSE = 2;
     }
     int32 id = 1;
     string command = 2;

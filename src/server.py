@@ -29,32 +29,33 @@ lock = threading.Lock()
 ################################################################################
 
 
-def delete_random_entity(command):
+def sim_delete_random_entity(command):
     entity = None
     with lock:
         if world.entities:
             entity = world.entities.pop(random.choice(list(world.entities.keys())))
-    logger.info(f'delete_random_entity entity={entity}')
+    logger.info(f'sim_delete_random_entity entity={entity}')
 
 
-def sim_pause(command):
+def sim_toggle_pause(command):
     world.toggle_pause()
+    logger.info(f'sim_toggle_pause world.paused={world.paused}')
 
 
-def spawn_random_entity(command):
+def sim_spawn_random_entity(command):
     cube = e.Cube(p.Vector(0, 0, 0), 1)
     cube.speed = p.random.uniform(-3, 3)
     cube.direction = p.Vector.random(-0.5, 0.5).normalize()
     cube.color = p.Vector.random(0, 1)
     with lock:
         world.add_entity(cube)
-    logger.info(f'spawn_random_entity entity={cube}')
+    logger.info(f'sim_spawn_random_entity entity={cube}')
 
 
 handlers = {
-    m.ClientMessage.Command.Type.Value('DELETE_RANDOM_ENTITY'): delete_random_entity,
-    m.ClientMessage.Command.Type.Value('SPAWN_RANDOM_ENTITY'): spawn_random_entity,
-    m.ClientMessage.Command.Type.Value('SIM_PAUSE'): sim_pause
+    m.ClientMessage.Command.Type.Value('SIM_DELETE_RANDOM_ENTITY'): sim_delete_random_entity,
+    m.ClientMessage.Command.Type.Value('SIM_SPAWN_RANDOM_ENTITY'): sim_spawn_random_entity,
+    m.ClientMessage.Command.Type.Value('SIM_TOGGLE_PAUSE'): sim_toggle_pause
 }
 
 ################################################################################
@@ -71,7 +72,7 @@ def process(message):
 
     # execute client commands
     for command in cl_message.commands:
-        logger.info(f'process exec command id={m.ClientMessage.Command.Type.Name(command.id)}')
+        logger.info(f'process id={m.ClientMessage.Command.Type.Name(command.id)}')
         handlers[command.id](command)
 
 
@@ -122,7 +123,8 @@ sv_addr = ('0.0.0.0', 31337)
 cl_addr = ('0.0.0.0', 31338)
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.bind(sv_addr)
-netchan = nc.NetChannel(sock, cl_addr, process)
+recv_rate = send_rate = 20
+netchan = nc.NetChannel(sock, cl_addr, process, recv_rate, send_rate)
 
 threading.Thread(target=snapshot, daemon=True).start()
 threading.Thread(target=noise, daemon=True).start()

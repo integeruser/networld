@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='messages.proto',
   package='',
   syntax='proto3',
-  serialized_pb=_b('\n\x0emessages.proto\">\n\x06Packet\x12\x0b\n\x03seq\x18\x01 \x01(\x05\x12\x0b\n\x03\x61\x63k\x18\x02 \x01(\x05\x12\x1a\n\x08messages\x18\x03 \x03(\x0b\x32\x08.Message\"C\n\x07Message\x12\x0b\n\x03seq\x18\x01 \x01(\x05\x12\x0b\n\x03\x61\x63k\x18\x02 \x01(\x05\x12\x10\n\x08reliable\x18\x03 \x01(\x08\x12\x0c\n\x04\x64\x61ta\x18\x04 \x01(\x0c\"^\n\rServerMessage\x12\x1f\n\x02op\x18\x02 \x01(\x0e\x32\x13.ServerMessage.Type\x12\x0c\n\x04\x64\x61ta\x18\x03 \x01(\x0c\"\x1e\n\x04Type\x12\x08\n\x04NOOP\x10\x00\x12\x0c\n\x08SNAPSHOT\x10\x01\"\xb9\x01\n\rClientMessage\x12(\n\x08\x63ommands\x18\x01 \x03(\x0b\x32\x16.ClientMessage.Command\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\x0c\x1ap\n\x07\x43ommand\x12\n\n\x02id\x18\x01 \x01(\x05\x12\x0f\n\x07\x63ommand\x18\x02 \x01(\t\"H\n\x04Type\x12\x18\n\x14\x44\x45LETE_RANDOM_ENTITY\x10\x00\x12\x17\n\x13SPAWN_RANDOM_ENTITY\x10\x01\x12\r\n\tSIM_PAUSE\x10\x02\x62\x06proto3')
+  serialized_pb=_b('\n\x0emessages.proto\">\n\x06Packet\x12\x0b\n\x03seq\x18\x01 \x01(\x05\x12\x0b\n\x03\x61\x63k\x18\x02 \x01(\x05\x12\x1a\n\x08messages\x18\x03 \x03(\x0b\x32\x08.Message\"C\n\x07Message\x12\x0b\n\x03seq\x18\x01 \x01(\x05\x12\x0b\n\x03\x61\x63k\x18\x02 \x01(\x05\x12\x10\n\x08reliable\x18\x03 \x01(\x08\x12\x0c\n\x04\x64\x61ta\x18\x04 \x01(\x0c\"^\n\rServerMessage\x12\x1f\n\x02op\x18\x02 \x01(\x0e\x32\x13.ServerMessage.Type\x12\x0c\n\x04\x64\x61ta\x18\x03 \x01(\x0c\"\x1e\n\x04Type\x12\x08\n\x04NOOP\x10\x00\x12\x0c\n\x08SNAPSHOT\x10\x01\"\xc8\x01\n\rClientMessage\x12(\n\x08\x63ommands\x18\x01 \x03(\x0b\x32\x16.ClientMessage.Command\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\x0c\x1a\x7f\n\x07\x43ommand\x12\n\n\x02id\x18\x01 \x01(\x05\x12\x0f\n\x07\x63ommand\x18\x02 \x01(\t\"W\n\x04Type\x12\x1c\n\x18SIM_DELETE_RANDOM_ENTITY\x10\x00\x12\x1b\n\x17SIM_SPAWN_RANDOM_ENTITY\x10\x01\x12\x14\n\x10SIM_TOGGLE_PAUSE\x10\x02\x62\x06proto3')
 )
 
 
@@ -53,22 +53,22 @@ _CLIENTMESSAGE_COMMAND_TYPE = _descriptor.EnumDescriptor(
   file=DESCRIPTOR,
   values=[
     _descriptor.EnumValueDescriptor(
-      name='DELETE_RANDOM_ENTITY', index=0, number=0,
+      name='SIM_DELETE_RANDOM_ENTITY', index=0, number=0,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='SPAWN_RANDOM_ENTITY', index=1, number=1,
+      name='SIM_SPAWN_RANDOM_ENTITY', index=1, number=1,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='SIM_PAUSE', index=2, number=2,
+      name='SIM_TOGGLE_PAUSE', index=2, number=2,
       options=None,
       type=None),
   ],
   containing_type=None,
   options=None,
   serialized_start=361,
-  serialized_end=433,
+  serialized_end=448,
 )
 _sym_db.RegisterEnumDescriptor(_CLIENTMESSAGE_COMMAND_TYPE)
 
@@ -244,7 +244,7 @@ _CLIENTMESSAGE_COMMAND = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=321,
-  serialized_end=433,
+  serialized_end=448,
 )
 
 _CLIENTMESSAGE = _descriptor.Descriptor(
@@ -281,7 +281,7 @@ _CLIENTMESSAGE = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=248,
-  serialized_end=433,
+  serialized_end=448,
 )
 
 _PACKET.fields_by_name['messages'].message_type = _MESSAGE

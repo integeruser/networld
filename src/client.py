@@ -61,7 +61,8 @@ sv_addr = ('0.0.0.0', 31337)
 cl_addr = ('0.0.0.0', 31338)
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.bind(cl_addr)
-netchan = nc.NetChannel(sock, sv_addr, process)
+recv_rate = send_rate = 20
+netchan = nc.NetChannel(sock, sv_addr, process, recv_rate, send_rate)
 
 threading.Thread(target=ack, daemon=use_gui).start()
 
@@ -73,13 +74,14 @@ if use_gui:
         cl_message = None
         if symbol == pyglet.window.key.D:
             cl_message = m.ClientMessage(
-                commands=[m.ClientMessage.Command(id=m.ClientMessage.Command.DELETE_RANDOM_ENTITY)])
+                commands=[m.ClientMessage.Command(id=m.ClientMessage.Command.SIM_DELETE_RANDOM_ENTITY)])
         elif symbol == pyglet.window.key.P:
             world.toggle_pause()
-            cl_message = m.ClientMessage(commands=[m.ClientMessage.Command(id=m.ClientMessage.Command.SIM_PAUSE)])
+            cl_message = m.ClientMessage(
+                commands=[m.ClientMessage.Command(id=m.ClientMessage.Command.SIM_TOGGLE_PAUSE)])
         elif symbol == pyglet.window.key.S:
             cl_message = m.ClientMessage(
-                commands=[m.ClientMessage.Command(id=m.ClientMessage.Command.SPAWN_RANDOM_ENTITY)])
+                commands=[m.ClientMessage.Command(id=m.ClientMessage.Command.SIM_SPAWN_RANDOM_ENTITY)])
         if cl_message:
             netchan.transmit(m.Message(reliable=True, data=cl_message.SerializeToString()))
 
