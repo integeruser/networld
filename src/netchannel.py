@@ -27,6 +27,7 @@ class NetChannel:
         self.min_pktack_to_recv = -1
 
         self.msgseq_count = itertools.count(1)
+        self.max_rel_msgseq_recv = -1
         self.max_msgseq_recv = -1
 
         self.rel_messages_deque = collections.deque()
@@ -111,7 +112,7 @@ class NetChannel:
 
         # acknowledge the arrival of the last message received
         assert message.ack == 0
-        message.ack = self.max_msgseq_recv
+        message.ack = self.max_rel_msgseq_recv
 
         logger.debug(
             f'{self.sock.getsockname()}: transmit seq={message.seq} reliable={message.reliable} data={message.data}')
@@ -129,12 +130,18 @@ class NetChannel:
             f'{self.sock.getsockname()}: process seq={message.seq} ack={message.ack} reliable={message.reliable} data={message.data}'
         )
 
-        if message.seq <= self.max_msgseq_recv:
-            # discard the message because a newer one was already received
-            logger.debug(f'{self.sock.getsockname()}: process seq={message.seq} is late')
-            return
-        self.max_msgseq_recv = message.seq
-
+        if message.reliable:
+            if message.seq <= self.max_rel_msgseq_recv:
+                # discard the message because a newer one was already received
+                logger.debug(f'{self.sock.getsockname()}: process seq={message.seq} is late')
+                return
+            self.max_rel_msgseq_recv = message.seq
+        else:
+            if message.seq <= self.max_msgseq_recv:
+                # discard the message because a newer one was already received
+                logger.debug(f'{self.sock.getsockname()}: process seq={message.seq} is late')
+                return
+            self.max_msgseq_recv = message.seq
         self.process_callback(message)
 
 
