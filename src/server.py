@@ -3,6 +3,7 @@ import argparse
 import copy
 import json
 import logging
+import random
 import socket
 import sys
 import threading
@@ -25,19 +26,33 @@ logging.basicConfig(stream=sys.stdout, level=args.loglevel or logging.INFO)
 
 lock = threading.Lock()
 
+################################################################################
 
-def client_cmd_spawn_random_entity(command):
+
+def delete_random_entity(command):
+    entity = None
+    with lock:
+        if world.entities:
+            entity = world.entities.pop(random.choice(list(world.entities.keys())))
+    logger.info(f'delete_random_entity entity={entity}')
+
+
+def spawn_random_entity(command):
     cube = e.Cube(p.Vector(0, 0, 0), 1)
     cube.speed = p.random.uniform(-3, 3)
     cube.direction = p.Vector.random(-0.5, 0.5).normalize()
     cube.color = p.Vector.random(0, 1)
     with lock:
         world.add_entity(cube)
+    logger.info(f'spawn_random_entity entity={cube}')
 
-    logger.info(f'spawned {cube}')
 
+handlers = {
+    m.ClientMessage.Command.Type.Value('DELETE_RANDOM_ENTITY'): delete_random_entity,
+    m.ClientMessage.Command.Type.Value('SPAWN_RANDOM_ENTITY'): spawn_random_entity
+}
 
-client_commands_to_actions = {m.ClientMessage.Command.Type.Value('SPAWN_RANDOM_ENTITY'): client_cmd_spawn_random_entity}
+################################################################################
 
 
 def process(message):
@@ -52,7 +67,7 @@ def process(message):
     # execute client commands
     for command in cl_message.commands:
         logger.info(f'process exec command id={m.ClientMessage.Command.Type.Name(command.id)}')
-        client_commands_to_actions[command.id](command)
+        handlers[command.id](command)
 
 
 def snapshot():

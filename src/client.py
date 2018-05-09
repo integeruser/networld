@@ -70,9 +70,14 @@ if use_gui:
 
     @window.event
     def on_key_press(symbol, modifiers):
-        if symbol == ord('a'):
+        cl_message = None
+        if symbol == ord('d'):
             cl_message = m.ClientMessage(
-                commands=[m.ClientMessage.Command(id=m.ClientMessage.Command.SPAWN_RANDOM_ENTITY)], data=b'ack')
+                commands=[m.ClientMessage.Command(id=m.ClientMessage.Command.DELETE_RANDOM_ENTITY)])
+        elif symbol == ord('s'):
+            cl_message = m.ClientMessage(
+                commands=[m.ClientMessage.Command(id=m.ClientMessage.Command.SPAWN_RANDOM_ENTITY)])
+        if cl_message:
             netchan.transmit(m.Message(reliable=True, data=cl_message.SerializeToString()))
 
     @window.event

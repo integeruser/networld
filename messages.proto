@@ -29,7 +29,8 @@ message ServerMessage {
 message ClientMessage {
   message Command {
     enum Type {
-      SPAWN_RANDOM_ENTITY = 0;
+      DELETE_RANDOM_ENTITY = 0;
+      SPAWN_RANDOM_ENTITY = 1;
     }
     int32 id = 1;
     string command = 2;
