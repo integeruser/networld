@@ -71,13 +71,13 @@ if use_gui:
     @window.event
     def on_key_press(symbol, modifiers):
         cl_message = None
-        if symbol == ord('d'):
+        if symbol == pyglet.window.key.D:
             cl_message = m.ClientMessage(
                 commands=[m.ClientMessage.Command(id=m.ClientMessage.Command.DELETE_RANDOM_ENTITY)])
-        elif symbol == ord('p'):
+        elif symbol == pyglet.window.key.P:
             world.toggle_pause()
             cl_message = m.ClientMessage(commands=[m.ClientMessage.Command(id=m.ClientMessage.Command.SIM_PAUSE)])
-        elif symbol == ord('s'):
+        elif symbol == pyglet.window.key.S:
             cl_message = m.ClientMessage(
                 commands=[m.ClientMessage.Command(id=m.ClientMessage.Command.SPAWN_RANDOM_ENTITY)])
         if cl_message:
@@ -102,7 +102,6 @@ if use_gui:
         pyglet.gl.glMatrixMode(pyglet.gl.GL_MODELVIEW)
         pyglet.gl.glLoadIdentity()
         world.draw()
-        return pyglet.event.EVENT_HANDLED
 
     def update(dt):
         world.tick(dt)

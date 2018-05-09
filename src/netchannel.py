@@ -15,7 +15,7 @@ lock = threading.Lock()
 class NetChannel:
     MAX_PACKET_LEN = 2048
 
-    def __init__(self, sock, cl_addr, process_callback, recv_rate=20, send_rate=20):
+    def __init__(self, sock, cl_addr, process_callback, recv_rate, send_rate):
         self.sock = sock
         self.cl_addr = cl_addr
         self.process_callback = process_callback
@@ -182,19 +182,22 @@ if __name__ == '__main__':
         if message.reliable:
             assert message.data == next(cl_data_to_recv)
 
-    sv_netchan = NetChannel(sv_sock, cl_addr, sv_process_callback)
-    cl_netchan = NetChannel(cl_sock, sv_addr, cl_process_callback)
+    recv_rate = send_rate = 1
+    sv_netchan = NetChannel(sv_sock, cl_addr, sv_process_callback, recv_rate, send_rate)
+    cl_netchan = NetChannel(cl_sock, sv_addr, cl_process_callback, recv_rate, send_rate)
 
     def noop(netchan):
         while True:
-            netchan.transmit(m.Message(reliable=False, data=b'noop'))
             time.sleep(0.30)
+
+            netchan.transmit(m.Message(reliable=False, data=b'noop'))
 
     threading.Thread(target=noop, daemon=True, args=(sv_netchan, )).start()
     threading.Thread(target=noop, daemon=True, args=(cl_netchan, )).start()
 
     for i in range(num_reliable_messages_to_send):
+        time.sleep(0.15)
+
         sv_netchan.transmit(m.Message(reliable=True, data=sv_data_to_send[i]))
         cl_netchan.transmit(m.Message(reliable=True, data=cl_data_to_send[i]))
-        time.sleep(0.15)
     time.sleep(3.00)
