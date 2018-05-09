@@ -27,8 +27,8 @@ class NetChannel:
         self.min_pktack_to_recv = -1
 
         self.msgseq_count = itertools.count(1)
-        self.max_rel_msgseq_recv = -1
         self.max_msgseq_recv = -1
+        self.max_rel_msgseq_recv = -1
 
         self.rel_messages_deque = collections.deque()
         self.unrel_messages_deque = collections.deque()
@@ -49,12 +49,12 @@ class NetChannel:
             packet = m.Packet()
             packet.ParseFromString(recv_data)
             logger.debug(
-                f'{self.sock.getsockname()}: _recv seq={packet.seq} ack={packet.ack} messages={[message.seq for message in packet.messages]}'
+                f'{self.sock.getsockname()}: _recv pktseq={packet.seq} pktack={packet.ack} messages={[message.seq for message in packet.messages]}'
             )
 
             if packet.seq < self.max_pktseq_recv:
                 # discard the packet because a newer one was already received
-                logger.debug(f'{self.sock.getsockname()}: _recv seq={packet.seq} is late')
+                logger.debug(f'{self.sock.getsockname()}: _recv pktseq={packet.seq} is late')
                 continue
             if packet.seq == self.max_pktseq_recv:
                 # two packets cannot have the same seq number
@@ -94,7 +94,7 @@ class NetChannel:
             # build the packet
             packet = m.Packet(seq=next(self.pktseq_count), ack=self.max_pktseq_recv, messages=messages_to_send)
             logger.debug(
-                f'{self.sock.getsockname()}: _send packet seq={packet.seq} ack={packet.ack} messages={[message.seq for message in packet.messages]}'
+                f'{self.sock.getsockname()}: _send packet pktseq={packet.seq} pktack={packet.ack} messages={[message.seq for message in packet.messages]}'
             )
 
             # send the packet
@@ -112,10 +112,10 @@ class NetChannel:
 
         # acknowledge the arrival of the last message received
         assert message.ack == 0
-        message.ack = self.max_rel_msgseq_recv
+        message.ack = self.max_msgseq_recv
 
         logger.debug(
-            f'{self.sock.getsockname()}: transmit seq={message.seq} reliable={message.reliable} data={message.data}')
+            f'{self.sock.getsockname()}: transmit msgseq={message.seq} reliable={message.reliable} data={message.data}')
 
         # put the message in the appropriate deque for later sending
         if message.reliable:
@@ -127,21 +127,22 @@ class NetChannel:
 
     def process(self, message):
         logger.debug(
-            f'{self.sock.getsockname()}: process seq={message.seq} ack={message.ack} reliable={message.reliable} data={message.data}'
+            f'{self.sock.getsockname()}: process msgseq={message.seq} msgack={message.ack} reliable={message.reliable} data={message.data}'
         )
 
         if message.reliable:
             if message.seq <= self.max_rel_msgseq_recv:
                 # discard the message because a newer one was already received
-                logger.debug(f'{self.sock.getsockname()}: process seq={message.seq} is late')
+                logger.debug(f'{self.sock.getsockname()}: process msgseq={message.seq} is late or duplicated')
                 return
             self.max_rel_msgseq_recv = message.seq
         else:
             if message.seq <= self.max_msgseq_recv:
                 # discard the message because a newer one was already received
-                logger.debug(f'{self.sock.getsockname()}: process seq={message.seq} is late')
+                logger.debug(f'{self.sock.getsockname()}: process msgseq={message.seq} is late or duplicated')
                 return
-            self.max_msgseq_recv = message.seq
+        self.max_msgseq_recv = max(self.max_msgseq_recv, message.seq)
+
         self.process_callback(message)
 
 
@@ -179,17 +180,19 @@ if __name__ == '__main__':
 
     def sv_process_callback(message):
         logger.info(
-            f'sv: process_callback seq={message.seq} ack={message.ack} reliable={message.reliable} data={message.data}')
+            f'sv: process_callback msgseq={message.seq} msgack={message.ack} reliable={message.reliable} data={message.data}'
+        )
         if message.reliable:
             assert message.data == next(sv_data_to_recv)
 
     def cl_process_callback(message):
         logger.info(
-            f'cl: process_callback seq={message.seq} ack={message.ack} reliable={message.reliable} data={message.data}')
+            f'cl: process_callback msgseq={message.seq} msgack={message.ack} reliable={message.reliable} data={message.data}'
+        )
         if message.reliable:
             assert message.data == next(cl_data_to_recv)
 
-    recv_rate = send_rate = 1
+    recv_rate = send_rate = 10
     sv_netchan = NetChannel(sv_sock, cl_addr, sv_process_callback, recv_rate, send_rate)
     cl_netchan = NetChannel(cl_sock, sv_addr, cl_process_callback, recv_rate, send_rate)
 
