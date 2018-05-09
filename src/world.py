@@ -63,6 +63,8 @@ class World:
         self.ids = 0
         self.entities = dict()
 
+        self.paused = False
+
     def __eq__(self, other):
         return vars(self) == vars(other)
 
@@ -94,11 +96,15 @@ class World:
             entity.draw()
         self.boundaries.draw()
 
+    def toggle_pause(self):
+        self.paused = not self.paused
+
     def tick(self, dt):
-        for entity in self.entities.values():
-            entity.tick(dt)
-        for entity in self.entities.values():
-            self._handle_boundaries_collision(entity)
+        if not self.paused:
+            for entity in self.entities.values():
+                entity.tick(dt)
+            for entity in self.entities.values():
+                self._handle_boundaries_collision(entity)
 
     def update(self, msg):
         logger.info(f'update len(msg)={len(msg)}')

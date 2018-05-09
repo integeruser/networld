@@ -37,6 +37,10 @@ def delete_random_entity(command):
     logger.info(f'delete_random_entity entity={entity}')
 
 
+def sim_pause(command):
+    world.toggle_pause()
+
+
 def spawn_random_entity(command):
     cube = e.Cube(p.Vector(0, 0, 0), 1)
     cube.speed = p.random.uniform(-3, 3)
@@ -49,7 +53,8 @@ def spawn_random_entity(command):
 
 handlers = {
     m.ClientMessage.Command.Type.Value('DELETE_RANDOM_ENTITY'): delete_random_entity,
-    m.ClientMessage.Command.Type.Value('SPAWN_RANDOM_ENTITY'): spawn_random_entity
+    m.ClientMessage.Command.Type.Value('SPAWN_RANDOM_ENTITY'): spawn_random_entity,
+    m.ClientMessage.Command.Type.Value('SIM_PAUSE'): sim_pause
 }
 
 ################################################################################

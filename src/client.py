@@ -74,6 +74,9 @@ if use_gui:
         if symbol == ord('d'):
             cl_message = m.ClientMessage(
                 commands=[m.ClientMessage.Command(id=m.ClientMessage.Command.DELETE_RANDOM_ENTITY)])
+        elif symbol == ord('p'):
+            world.toggle_pause()
+            cl_message = m.ClientMessage(commands=[m.ClientMessage.Command(id=m.ClientMessage.Command.SIM_PAUSE)])
         elif symbol == ord('s'):
             cl_message = m.ClientMessage(
                 commands=[m.ClientMessage.Command(id=m.ClientMessage.Command.SPAWN_RANDOM_ENTITY)])

@@ -31,6 +31,7 @@ message ClientMessage {
     enum Type {
       DELETE_RANDOM_ENTITY = 0;
       SPAWN_RANDOM_ENTITY = 1;
+      SIM_PAUSE = 2;
     }
     int32 id = 1;
     string command = 2;
