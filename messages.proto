@@ -20,10 +20,21 @@ message ServerMessage {
     NOOP     = 0;
     SNAPSHOT = 1;
   }
+
   Type op = 2;
   bytes data = 3;
 }
 
+
 message ClientMessage {
-  bytes data = 1;
+  message Command {
+    enum Type {
+      SPAWN_RANDOM_ENTITY = 0;
+    }
+    int32 id = 1;
+    string command = 2;
+  }
+
+  repeated Command commands = 1;
+  bytes data = 2;
 }

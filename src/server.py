@@ -10,8 +10,10 @@ import time
 
 import yaml
 
+import entities as e
 import messages_pb2 as m
 import netchannel as nc
+import physics as p
 import world as w
 
 parser = argparse.ArgumentParser()
@@ -24,6 +26,20 @@ logging.basicConfig(stream=sys.stdout, level=args.loglevel or logging.INFO)
 lock = threading.Lock()
 
 
+def client_cmd_spawn_random_entity(command):
+    cube = e.Cube(p.Vector(0, 0, 0), 1)
+    cube.speed = p.random.uniform(-3, 3)
+    cube.direction = p.Vector.random(-0.5, 0.5).normalize()
+    cube.color = p.Vector.random(0, 1)
+    with lock:
+        world.add_entity(cube)
+
+    logger.info(f'spawned {cube}')
+
+
+client_commands_to_actions = {m.ClientMessage.Command.Type.Value('SPAWN_RANDOM_ENTITY'): client_cmd_spawn_random_entity}
+
+
 def process(message):
     cl_message = m.ClientMessage()
     cl_message.ParseFromString(message.data)
@@ -32,6 +48,11 @@ def process(message):
     with lock:
         # update most recent snapshot acknowledged
         last_snapshot_ack = max(filter(lambda seq: seq < message.ack, snapshots_history.keys()))
+
+    # execute client commands
+    for command in cl_message.commands:
+        logger.info(f'process exec command id={m.ClientMessage.Command.Type.Name(command.id)}')
+        client_commands_to_actions[command.id](command)
 
 
 def snapshot():

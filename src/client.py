@@ -70,7 +70,10 @@ if use_gui:
 
     @window.event
     def on_key_press(symbol, modifiers):
-        pass
+        if symbol == ord('a'):
+            cl_message = m.ClientMessage(
+                commands=[m.ClientMessage.Command(id=m.ClientMessage.Command.SPAWN_RANDOM_ENTITY)], data=b'ack')
+            netchan.transmit(m.Message(reliable=True, data=cl_message.SerializeToString()))
 
     @window.event
     def on_key_release(symbol, modifiers):
