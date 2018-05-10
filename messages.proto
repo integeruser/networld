@@ -2,14 +2,14 @@ syntax = "proto3";
 
 
 message Packet {
-  int32 seq = 1;
-  int32 ack = 2;
+  uint32 seq = 1;
+  uint32 ack = 2;
   repeated Message messages = 3;
 }
 
 message Message {
-  int32 seq = 1;
-  int32 ack = 2;
+  uint32 seq = 1;
+  uint32 ack = 2;
   bool reliable = 3;
   bytes data = 4;
 }

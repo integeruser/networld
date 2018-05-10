@@ -23,12 +23,12 @@ class NetChannel:
         self.send_rate = send_rate
 
         self.pktseq_count = itertools.count(1)
-        self.max_pktseq_recv = -1
-        self.min_pktack_to_recv = -1
+        self.max_pktseq_recv = 0
+        self.min_pktack_to_recv = 0
 
         self.msgseq_count = itertools.count(1)
-        self.max_msgseq_recv = -1
-        self.max_rel_msgseq_recv = -1
+        self.max_msgseq_recv = 0
+        self.max_rel_msgseq_recv = 0
 
         self.rel_messages_deque = collections.deque()
         self.unrel_messages_deque = collections.deque()
@@ -65,7 +65,7 @@ class NetChannel:
                 # the current batch of reliable messages to send arrived at destination
                 with lock:
                     self.rel_messages_to_send = list()
-                    self.min_pktack_to_recv = -1
+                    self.min_pktack_to_recv = 0
 
             # process the messages received
             for message in sorted(packet.messages, key=lambda message: message.seq):
